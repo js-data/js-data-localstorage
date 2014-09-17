@@ -1,0 +1,9 @@
+{
+  "firebase": "js-data-localStorage",
+  "public": ".",
+  "ignore": [
+    "firebase.json",
+    "**/.*",
+    "**/node_modules/**"
+  ]
+}
