@@ -1,9 +1,9 @@
 (function () {
-  var localStorageAdapter = new LocalStorageAdapter();
+  var dsLocalStorageAdapter = new DSLocalStorageAdapter();
 
   var datastore = new JSData.DS();
-  datastore.defaults.defaultAdapter = 'localStorageAdapter';
-  datastore.adapters.localStorageAdapter = localStorageAdapter;
+  datastore.defaults.defaultAdapter = 'dsLocalStorageAdapter';
+  datastore.adapters.dsLocalStorageAdapter = dsLocalStorageAdapter;
 
   var User = datastore.defineResource('user');
 

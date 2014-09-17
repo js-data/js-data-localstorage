@@ -1,7 +1,7 @@
-describe('localStorageAdapter#findAll', function () {
+describe('dsLocalStorageAdapter#findAll', function () {
   it('should throw a "Not yet implemented!" error', function () {
     assert.throws(function () {
-      localStorageAdapter.findAll();
+      dsLocalStorageAdapter.findAll();
     }, Error, 'Not yet implemented!');
   });
 });

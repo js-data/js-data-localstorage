@@ -1,5 +1,5 @@
 // Setup global test variables
-var localStorageAdapter, User;
+var dsLocalStorageAdapter, User;
 
 // Helper globals
 var fail = function (msg) {
@@ -38,5 +38,5 @@ beforeEach(function () {
     class: 'User',
     idAttribute: 'id'
   };
-  localStorageAdapter = new LocalStorageAdapter();
+  dsLocalStorageAdapter = new DSLocalStorageAdapter();
 });

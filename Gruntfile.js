@@ -53,8 +53,9 @@ module.exports = function (grunt) {
     browserify: {
       options: {
         browserifyOptions: {
-          standalone: 'LocalStorageAdapter'
-        }
+          standalone: 'DSLocalStorageAdapter'
+        },
+        external: ['js-data']
       },
       dist: {
         files: {

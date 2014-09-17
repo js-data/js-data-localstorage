@@ -1,8 +1,14 @@
-var deepMixIn = require('mout/object/deepMixIn');
-var makePath = require('mout/string/makePath');
+var JSData;
+if (!window && typeof module !== 'undefined' && module.exports) {
+  JSData = require('js-data');
+} else {
+  JSData = window.JSData;
+}
+
+var makePath = JSData.DSUtils.makePath;
+var deepMixIn = JSData.DSUtils.deepMixIn;
 var guid = require('mout/random/guid');
-var toJson = JSON.stringify;
-var P = require('es6-promise').Promise;
+var P = JSData.DSUtils.Promise;
 
 function Defaults() {
 
@@ -10,20 +16,20 @@ function Defaults() {
 
 /**
  * @doc constructor
- * @id LocalStorageAdapter
- * @name LocalStorageAdapter
+ * @id DSLocalStorageAdapter
+ * @name DSLocalStorageAdapter
  * @description
  * Adapter to be used with js-data.
  */
-function LocalStorageAdapter(options) {
+function DSLocalStorageAdapter(options) {
   options = options || {};
 
   /**
    * @doc property
-   * @id LocalStorageAdapter.properties:defaults
+   * @id DSLocalStorageAdapter.properties:defaults
    * @name defaults
    * @description
-   * Reference to [LocalStorageAdapter.defaults](/documentation/api/api/LocalStorageAdapter.properties:defaults).
+   * Reference to [DSLocalStorageAdapter.defaults](/documentation/api/api/DSLocalStorageAdapter.properties:defaults).
    */
   this.defaults = new Defaults();
   deepMixIn(this.defaults, options);
@@ -31,20 +37,20 @@ function LocalStorageAdapter(options) {
 
 /**
  * @doc method
- * @id LocalStorageAdapter.methods:GET
+ * @id DSLocalStorageAdapter.methods:GET
  * @name GET
  * @description
  * An asynchronous wrapper for `localStorage.getItem(key)`.
  *
  * ## Signature:
  * ```js
- * LocalStorageAdapter.GET(key)
+ * DSLocalStorageAdapter.GET(key)
  * ```
  *
  * @param {string} key The key path of the item to retrieve.
  * @returns {Promise} Promise.
  */
-LocalStorageAdapter.prototype.GET = function (key) {
+DSLocalStorageAdapter.prototype.GET = function (key) {
   return new P(function (resolve) {
     var item = localStorage.getItem(key);
     resolve(item ? DSUtils.fromJson(item) : undefined);
@@ -53,47 +59,47 @@ LocalStorageAdapter.prototype.GET = function (key) {
 
 /**
  * @doc method
- * @id LocalStorageAdapter.methods:PUT
+ * @id DSLocalStorageAdapter.methods:PUT
  * @name PUT
  * @description
  * An asynchronous wrapper for `localStorage.setItem(key, value)`.
  *
  * ## Signature:
  * ```js
- * LocalStorageAdapter.PUT(key, value)
+ * DSLocalStorageAdapter.PUT(key, value)
  * ```
  *
  * @param {string} key The key to update.
  * @param {object} value Attributes to put.
  * @returns {Promise} Promise.
  */
-LocalStorageAdapter.prototype.PUT = function (key, value) {
-  var LocalStorageAdapter = this;
-  return LocalStorageAdapter.GET(key).then(function (item) {
+DSLocalStorageAdapter.prototype.PUT = function (key, value) {
+  var DSLocalStorageAdapter = this;
+  return DSLocalStorageAdapter.GET(key).then(function (item) {
     if (item) {
       deepMixIn(item, value);
     }
     localStorage.setItem(key, toJson(item || value));
-    return LocalStorageAdapter.GET(key);
+    return DSLocalStorageAdapter.GET(key);
   });
 };
 
 /**
  * @doc method
- * @id LocalStorageAdapter.methods:DEL
+ * @id DSLocalStorageAdapter.methods:DEL
  * @name DEL
  * @description
  * An asynchronous wrapper for `localStorage.removeItem(key)`.
  *
  * ## Signature:
  * ```js
- * LocalStorageAdapter.DEL(key)
+ * DSLocalStorageAdapter.DEL(key)
  * ```
  *
  * @param {string} key The key to remove.
  * @returns {Promise} Promise.
  */
-LocalStorageAdapter.prototype.DEL = function (key) {
+DSLocalStorageAdapter.prototype.DEL = function (key) {
   return new P(function (resolve) {
     localStorage.removeItem(key);
     resolve();
@@ -102,20 +108,20 @@ LocalStorageAdapter.prototype.DEL = function (key) {
 
 /**
  * @doc method
- * @id LocalStorageAdapter.methods:find
+ * @id DSLocalStorageAdapter.methods:find
  * @name find
  * @description
  * Retrieve a single entity from localStorage.
  *
  * ## Signature:
  * ```js
- * LocalStorageAdapter.find(resourceConfig, id[, options])
+ * DSLocalStorageAdapter.find(resourceConfig, id[, options])
  * ```
  *
  * ## Example:
  * ```js
  * DS.find('user', 5, {
- *   adapter: 'LocalStorageAdapter'
+ *   adapter: 'DSLocalStorageAdapter'
  * }).then(function (user) {
  *   user; // { id: 5, ... }
  * });
@@ -129,32 +135,32 @@ LocalStorageAdapter.prototype.DEL = function (key) {
  *
  * @returns {Promise} Promise.
  */
-LocalStorageAdapter.prototype.find = function find(resourceConfig, id, options) {
+DSLocalStorageAdapter.prototype.find = function find(resourceConfig, id, options) {
   options = options || {};
   return this.GET(makePath(options.baseUrl || resourceConfig.baseUrl, resourceConfig.endpoint, id));
 };
 
 /**
  * @doc method
- * @id LocalStorageAdapter.methods:findAll
+ * @id DSLocalStorageAdapter.methods:findAll
  * @name findAll
  * @description
  * Not supported.
  */
-LocalStorageAdapter.prototype.findAll = function () {
-  throw new Error('LocalStorageAdapter.findAll is not supported!');
+DSLocalStorageAdapter.prototype.findAll = function () {
+  throw new Error('DSLocalStorageAdapter.findAll is not supported!');
 };
 
 /**
  * @doc method
- * @id LocalStorageAdapter.methods:create
+ * @id DSLocalStorageAdapter.methods:create
  * @name create
  * @description
  * Create an entity in `localStorage`. You must generate the primary key and include it in the `attrs` object.
  *
  * ## Signature:
  * ```js
- * LocalStorageAdapter.create(resourceConfig, attrs[, options])
+ * DSLocalStorageAdapter.create(resourceConfig, attrs[, options])
  * ```
  *
  * ## Example:
@@ -163,7 +169,7 @@ LocalStorageAdapter.prototype.findAll = function () {
  *   id: 1,
  *   name: 'john'
  * }, {
- *   adapter: 'LocalStorageAdapter'
+ *   adapter: 'DSLocalStorageAdapter'
  * }).then(function (user) {
  *   user; // { id: 1, name: 'john' }
  * });
@@ -177,7 +183,7 @@ LocalStorageAdapter.prototype.findAll = function () {
  *
  * @returns {Promise} Promise.
  */
-LocalStorageAdapter.prototype.create = function (resourceConfig, attrs, options) {
+DSLocalStorageAdapter.prototype.create = function (resourceConfig, attrs, options) {
   attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid();
   options = options || {};
   return this.PUT(
@@ -188,14 +194,14 @@ LocalStorageAdapter.prototype.create = function (resourceConfig, attrs, options)
 
 /**
  * @doc method
- * @id LocalStorageAdapter.methods:update
+ * @id DSLocalStorageAdapter.methods:update
  * @name update
  * @description
  * Update an entity in localStorage.
  *
  * ## Signature:
  * ```js
- * LocalStorageAdapter.update(resourceConfig, id, attrs[, options])
+ * DSLocalStorageAdapter.update(resourceConfig, id, attrs[, options])
  * ```
  *
  * ## Example:
@@ -203,7 +209,7 @@ LocalStorageAdapter.prototype.create = function (resourceConfig, attrs, options)
  * DS.update('user', 5, {
  *   name: 'john'
  * }, {
- *   adapter: 'LocalStorageAdapter'
+ *   adapter: 'DSLocalStorageAdapter'
  * }).then(function (user) {
  *   user; // { id: 5, ... }
  * });
@@ -218,32 +224,32 @@ LocalStorageAdapter.prototype.create = function (resourceConfig, attrs, options)
  *
  * @returns {Promise} Promise.
  */
-LocalStorageAdapter.prototype.update = function (resourceConfig, id, attrs, options) {
+DSLocalStorageAdapter.prototype.update = function (resourceConfig, id, attrs, options) {
   options = options || {};
   return this.PUT(makePath(options.baseUrl || resourceConfig.baseUrl, resourceConfig.getEndpoint(id, options), id), attrs);
 };
 
 /**
  * @doc method
- * @id LocalStorageAdapter.methods:updateAll
+ * @id DSLocalStorageAdapter.methods:updateAll
  * @name updateAll
  * @description
  * Not supported.
  */
-LocalStorageAdapter.prototype.updateAll = function () {
-  throw new Error('LocalStorageAdapter.updateAll is not supported!');
+DSLocalStorageAdapter.prototype.updateAll = function () {
+  throw new Error('DSLocalStorageAdapter.updateAll is not supported!');
 };
 
 /**
  * @doc method
- * @id LocalStorageAdapter.methods:destroy
+ * @id DSLocalStorageAdapter.methods:destroy
  * @name destroy
  * @description
  * Destroy an entity from localStorage.
  *
  * ## Signature:
  * ```js
- * LocalStorageAdapter.destroy(resourceConfig, id[, options])
+ * DSLocalStorageAdapter.destroy(resourceConfig, id[, options])
  * ```
  *
  * ## Example:
@@ -251,7 +257,7 @@ LocalStorageAdapter.prototype.updateAll = function () {
  * DS.destroy('user', 5, {
  *   name: ''
  * }, {
- *   adapter: 'LocalStorageAdapter'
+ *   adapter: 'DSLocalStorageAdapter'
  * }).then(function (user) {
  *   user; // { id: 5, ... }
  * });
@@ -265,20 +271,20 @@ LocalStorageAdapter.prototype.updateAll = function () {
  *
  * @returns {Promise} Promise.
  */
-LocalStorageAdapter.prototype.destroy = function (resourceConfig, id, options) {
+DSLocalStorageAdapter.prototype.destroy = function (resourceConfig, id, options) {
   options = options || {};
   return this.DEL(makePath(options.baseUrl || resourceConfig.baseUrl, resourceConfig.getEndpoint(id, options), id));
 };
 
 /**
  * @doc method
- * @id LocalStorageAdapter.methods:destroyAll
+ * @id DSLocalStorageAdapter.methods:destroyAll
  * @name destroyAll
  * @description
  * Not supported.
  */
-LocalStorageAdapter.prototype.destroyAll = function () {
+DSLocalStorageAdapter.prototype.destroyAll = function () {
   throw new Error('Not supported!');
 };
 
-module.exports = LocalStorageAdapter;
+module.exports = DSLocalStorageAdapter;
