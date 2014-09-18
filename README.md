@@ -1,46 +1,46 @@
 <img src="https://raw.githubusercontent.com/js-data/js-data/prototype/js-data.png" alt="js-data logo" title="js-data" align="right" width="64" height="64" />
 
-## js-data-localStorage
+## js-data-localstorage
 
 localStorage adapter for js-data.
 
 ## Documentation
-[http://www.js-data.io/js-data-localStorage](http://www.js-data.io/js-data-localStorage)
+[http://www.js-data.io/js-data-localstorage](http://www.js-data.io/js-data-localstorage)
 
 ## Demo
-[https://js-data-localStorage.firebaseapp.com/](https://js-data-localStorage.firebaseapp.com/)
+[https://js-data-localstorage.firebaseapp.com/](https://js-data-localstorage.firebaseapp.com/)
 
 ## Project Status
 
 | Branch | Master |
 | ------ | ------ |
-| Bower | [![Bower version](https://badge.fury.io/bo/js-data-localStorage.png)](http://badge.fury.io/bo/js-data-localStorage) |
-| NPM | [![NPM version](https://badge.fury.io/js/js-data-localStorage.png)](http://badge.fury.io/js/js-data-localStorage) |
-| Build Status | [![Build Status](https://travis-ci.org/js-data/js-data-localStorage.png?branch=master)](https://travis-ci.org/js-data/js-data-localStorage) |
-| Code Climate | [![Code Climate](https://codeclimate.com/github/js-data/js-data-localStorage.png)](https://codeclimate.com/github/js-data/js-data-localStorage) |
-| Dependency Status | [![Dependency Status](https://gemnasium.com/js-data/js-data-localStorage.png)](https://gemnasium.com/js-data/js-data-localStorage) |
-| Coverage | [![Coverage Status](https://coveralls.io/repos/js-data/js-data-localStorage/badge.png?branch=master)](https://coveralls.io/r/js-data/js-data-localStorage?branch=master) |
+| Bower | [![Bower version](https://badge.fury.io/bo/js-data-localstorage.png)](http://badge.fury.io/bo/js-data-localstorage) |
+| NPM | [![NPM version](https://badge.fury.io/js/js-data-localstorage.png)](http://badge.fury.io/js/js-data-localstorage) |
+| Build Status | [![Build Status](https://travis-ci.org/js-data/js-data-localstorage.png?branch=master)](https://travis-ci.org/js-data/js-data-localstorage) |
+| Code Climate | [![Code Climate](https://codeclimate.com/github/js-data/js-data-localstorage.png)](https://codeclimate.com/github/js-data/js-data-localstorage) |
+| Dependency Status | [![Dependency Status](https://gemnasium.com/js-data/js-data-localstorage.png)](https://gemnasium.com/js-data/js-data-localstorage) |
+| Coverage | [![Coverage Status](https://coveralls.io/repos/js-data/js-data-localstorage/badge.png?branch=master)](https://coveralls.io/r/js-data/js-data-localstorage?branch=master) |
 
 ## Quick Start
-`bower install --save js-data-localStorage` or `npm install --save js-data-localStorage`.
+`bower install --save js-data-localstorage` or `npm install --save js-data-localstorage`.
 
 ## Changelog
-[CHANGELOG.md](https://github.com/js-data/js-data-localStorage/blob/master/CHANGELOG.md)
+[CHANGELOG.md](https://github.com/js-data/js-data-localstorage/blob/master/CHANGELOG.md)
 
 ## Community
 - [Mailing List](https://groups.google.com/forum/?fromgroups#!forum/js-data-project) - Ask your questions!
-- [Issues](https://github.com/js-data/js-data-localStorage/issues) - Found a bug? Feature request? Submit an issue!
-- [GitHub](https://github.com/js-data/js-data-localStorage) - View the source code for js-data.
-- [Contributing Guide](https://github.com/js-data/js-data-localStorage/blob/master/CONTRIBUTING.md)
+- [Issues](https://github.com/js-data/js-data-localstorage/issues) - Found a bug? Feature request? Submit an issue!
+- [GitHub](https://github.com/js-data/js-data-localstorage) - View the source code for js-data.
+- [Contributing Guide](https://github.com/js-data/js-data-localstorage/blob/master/CONTRIBUTING.md)
 
 ## Contributing
 
-First, feel free to contact me with questions. [Mailing List](https://groups.google.com/forum/?fromgroups#!forum/js-data-project). [Issues](https://github.com/js-data/js-data-localStorage/issues).
+First, feel free to contact me with questions. [Mailing List](https://groups.google.com/forum/?fromgroups#!forum/js-data-project). [Issues](https://github.com/js-data/js-data-localstorage/issues).
 
 1. Contribute to the issue that is the reason you'll be developing in the first place
-1. Fork js-data-localStorage
-1. `git clone https://github.com/<you>/js-data-localStorage.git`
-1. `cd js-data-localStorage; npm install; bower install;`
+1. Fork js-data-localstorage
+1. `git clone https://github.com/<you>/js-data-localstorage.git`
+1. `cd js-data-localstorage; npm install; bower install;`
 1. `grunt go` (builds and starts a watch)
 1. (in another terminal) `grunt karma:dev` (runs the tests)
 1. Write your code, including relevant documentation and tests

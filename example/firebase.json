@@ -1,5 +1,5 @@
 {
-  "firebase": "js-data-localStorage",
+  "firebase": "js-data-localstorage",
   "public": ".",
   "ignore": [
     "firebase.json",

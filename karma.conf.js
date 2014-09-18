@@ -21,7 +21,7 @@ module.exports = function (config) {
 		// list of files / patterns to load in the browser
 		files: [
 			'bower_components/js-data/dist/js-data.js',
-			'dist/js-data-localStorage.js',
+			'dist/js-data-localstorage.js',
 			'karma.start.js',
 			'test/**/*.js'
 		],
@@ -29,7 +29,7 @@ module.exports = function (config) {
 		reporters: ['spec', 'coverage'],
 
 		preprocessors: {
-			'dist/js-data-localStorage.js': ['coverage']
+			'dist/js-data-localstorage.js': ['coverage']
 		},
 
 		// optionally, configure the reporter

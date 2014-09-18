@@ -1,9 +1,9 @@
 /*
- * js-data-localStorage
- * http://github.com/js-data/js-data-localStorage
+ * js-data-localstorage
+ * http://github.com/js-data/js-data-localstorage
  *
- * Copyright (c) 2014 Jason Dobry <http://www.js-data.io/js-data-localStorage>
- * Licensed under the MIT license. <https://github.com/js-data/js-data-localStorage/blob/master/LICENSE>
+ * Copyright (c) 2014 Jason Dobry <http://www.js-data.io/js-data-localstorage>
+ * Licensed under the MIT license. <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
  */
 module.exports = function (grunt) {
   'use strict';
@@ -37,16 +37,16 @@ module.exports = function (grunt) {
         options: {
           banner: '/**\n' +
             '* @author Jason Dobry <jason.dobry@gmail.com>\n' +
-            '* @file js-data-localStorage.min.js\n' +
-            '* @version <%= pkg.version %> - Homepage <http://wwwjs-data.io/js-data-localStorage>\n' +
+            '* @file js-data-localstorage.min.js\n' +
+            '* @version <%= pkg.version %> - Homepage <http://wwwjs-data.io/js-data-localstorage>\n' +
             '* @copyright (c) 2014 Jason Dobry\n' +
-            '* @license MIT <https://github.com/js-data/js-data-localStorage/blob/master/LICENSE>\n' +
+            '* @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>\n' +
             '*\n' +
             '* @overview My Adapter.\n' +
             '*/\n'
         },
         files: {
-          'dist/js-data-localStorage.min.js': ['dist/js-data-localStorage.js']
+          'dist/js-data-localstorage.min.js': ['dist/js-data-localstorage.js']
         }
       }
     },
@@ -59,7 +59,7 @@ module.exports = function (grunt) {
       },
       dist: {
         files: {
-          'dist/js-data-localStorage.js': ['src/index.js']
+          'dist/js-data-localstorage.js': ['src/index.js']
         }
       }
     },
@@ -79,7 +79,7 @@ module.exports = function (grunt) {
         options: {
           files: [
             'bower_components/js-data/dist/js-data.min.js',
-            'dist/js-data-localStorage.min.js',
+            'dist/js-data-localstorage.min.js',
             'karma.start.js',
             'test/**/*.js'
           ]
@@ -105,21 +105,21 @@ module.exports = function (grunt) {
   });
 
   grunt.registerTask('banner', function () {
-    var file = grunt.file.read('dist/js-data-localStorage.js');
+    var file = grunt.file.read('dist/js-data-localstorage.js');
 
     var banner = '/**\n' +
       '* @author Jason Dobry <jason.dobry@gmail.com>\n' +
-      '* @file js-data-localStorage.js\n' +
-      '* @version ' + pkg.version + ' - Homepage <http://www.js-data.iojs-data-localStorage/>\n' +
+      '* @file js-data-localstorage.js\n' +
+      '* @version ' + pkg.version + ' - Homepage <http://www.js-data.iojs-data-localstorage/>\n' +
       '* @copyright (c) 2014 Jason Dobry \n' +
-      '* @license MIT <https://github.com/js-data/js-data-localStorage/blob/master/LICENSE>\n' +
+      '* @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>\n' +
       '*\n' +
       '* @overview My Adapter.\n' +
       '*/\n';
 
     file = banner + file;
 
-    grunt.file.write('dist/js-data-localStorage.js', file);
+    grunt.file.write('dist/js-data-localstorage.js', file);
   });
 
   grunt.registerTask('test', ['build', 'karma:ci', 'karma:min']);
