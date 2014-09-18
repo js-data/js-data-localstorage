@@ -67,6 +67,137 @@ var kindOf = require('./kindOf');
 
 
 },{}],6:[function(require,module,exports){
+var hasOwn = require('./hasOwn');
+
+    var _hasDontEnumBug,
+        _dontEnums;
+
+    function checkDontEnum(){
+        _dontEnums = [
+                'toString',
+                'toLocaleString',
+                'valueOf',
+                'hasOwnProperty',
+                'isPrototypeOf',
+                'propertyIsEnumerable',
+                'constructor'
+            ];
+
+        _hasDontEnumBug = true;
+
+        for (var key in {'toString': null}) {
+            _hasDontEnumBug = false;
+        }
+    }
+
+    /**
+     * Similar to Array/forEach but works over object properties and fixes Don't
+     * Enum bug on IE.
+     * based on: http://whattheheadsaid.com/2010/10/a-safer-object-keys-compatibility-implementation
+     */
+    function forIn(obj, fn, thisObj){
+        var key, i = 0;
+        // no need to check if argument is a real object that way we can use
+        // it for arrays, functions, date, etc.
+
+        //post-pone check till needed
+        if (_hasDontEnumBug == null) checkDontEnum();
+
+        for (key in obj) {
+            if (exec(fn, obj, key, thisObj) === false) {
+                break;
+            }
+        }
+
+
+        if (_hasDontEnumBug) {
+            var ctor = obj.constructor,
+                isProto = !!ctor && obj === ctor.prototype;
+
+            while (key = _dontEnums[i++]) {
+                // For constructor, if it is a prototype object the constructor
+                // is always non-enumerable unless defined otherwise (and
+                // enumerated above).  For non-prototype objects, it will have
+                // to be defined on this object, since it cannot be defined on
+                // any prototype objects.
+                //
+                // For other [[DontEnum]] properties, check if the value is
+                // different than Object prototype value.
+                if (
+                    (key !== 'constructor' ||
+                        (!isProto && hasOwn(obj, key))) &&
+                    obj[key] !== Object.prototype[key]
+                ) {
+                    if (exec(fn, obj, key, thisObj) === false) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    function exec(fn, obj, key, thisObj){
+        return fn.call(thisObj, obj[key], key, obj);
+    }
+
+    module.exports = forIn;
+
+
+
+},{"./hasOwn":8}],7:[function(require,module,exports){
+var hasOwn = require('./hasOwn');
+var forIn = require('./forIn');
+
+    /**
+     * Similar to Array/forEach but works over object properties and fixes Don't
+     * Enum bug on IE.
+     * based on: http://whattheheadsaid.com/2010/10/a-safer-object-keys-compatibility-implementation
+     */
+    function forOwn(obj, fn, thisObj){
+        forIn(obj, function(val, key){
+            if (hasOwn(obj, key)) {
+                return fn.call(thisObj, obj[key], key, obj);
+            }
+        });
+    }
+
+    module.exports = forOwn;
+
+
+
+},{"./forIn":6,"./hasOwn":8}],8:[function(require,module,exports){
+
+
+    /**
+     * Safer Object.hasOwnProperty
+     */
+     function hasOwn(obj, prop){
+         return Object.prototype.hasOwnProperty.call(obj, prop);
+     }
+
+     module.exports = hasOwn;
+
+
+
+},{}],9:[function(require,module,exports){
+var forOwn = require('./forOwn');
+
+    /**
+     * Get object keys
+     */
+     var keys = Object.keys || function (obj) {
+            var keys = [];
+            forOwn(obj, function(val, key){
+                keys.push(key);
+            });
+            return keys;
+        };
+
+    module.exports = keys;
+
+
+
+},{"./forOwn":7}],10:[function(require,module,exports){
 var randInt = require('./randInt');
 var isArray = require('../lang/isArray');
 
@@ -83,7 +214,7 @@ var isArray = require('../lang/isArray');
 
 
 
-},{"../lang/isArray":1,"./randInt":10}],7:[function(require,module,exports){
+},{"../lang/isArray":1,"./randInt":14}],11:[function(require,module,exports){
 var randHex = require('./randHex');
 var choice = require('./choice');
 
@@ -109,7 +240,7 @@ var choice = require('./choice');
   module.exports = guid;
 
 
-},{"./choice":6,"./randHex":9}],8:[function(require,module,exports){
+},{"./choice":10,"./randHex":13}],12:[function(require,module,exports){
 var random = require('./random');
 var MIN_INT = require('../number/MIN_INT');
 var MAX_INT = require('../number/MAX_INT');
@@ -126,7 +257,7 @@ var MAX_INT = require('../number/MAX_INT');
     module.exports = rand;
 
 
-},{"../number/MAX_INT":4,"../number/MIN_INT":5,"./random":11}],9:[function(require,module,exports){
+},{"../number/MAX_INT":4,"../number/MIN_INT":5,"./random":15}],13:[function(require,module,exports){
 var choice = require('./choice');
 
     var _chars = '0123456789abcdef'.split('');
@@ -147,7 +278,7 @@ var choice = require('./choice');
 
 
 
-},{"./choice":6}],10:[function(require,module,exports){
+},{"./choice":10}],14:[function(require,module,exports){
 var MIN_INT = require('../number/MIN_INT');
 var MAX_INT = require('../number/MAX_INT');
 var rand = require('./rand');
@@ -167,7 +298,7 @@ var rand = require('./rand');
     module.exports = randInt;
 
 
-},{"../number/MAX_INT":4,"../number/MIN_INT":5,"./rand":8}],11:[function(require,module,exports){
+},{"../number/MAX_INT":4,"../number/MIN_INT":5,"./rand":12}],15:[function(require,module,exports){
 
 
     /**
@@ -187,7 +318,7 @@ var rand = require('./rand');
 
 
 
-},{}],12:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 var JSData;
 if (!window && typeof module !== 'undefined' && module.exports) {
   JSData = require('js-data');
@@ -195,10 +326,17 @@ if (!window && typeof module !== 'undefined' && module.exports) {
   JSData = window.JSData;
 }
 
-var makePath = JSData.DSUtils.makePath;
-var deepMixIn = JSData.DSUtils.deepMixIn;
+var emptyStore = new JSData.DS();
+var DSUtils = JSData.DSUtils;
+var makePath = DSUtils.makePath;
+var deepMixIn = DSUtils.deepMixIn;
+var toJson = DSUtils.toJson;
+var fromJson = DSUtils.fromJson;
+var forEach = DSUtils.forEach;
+var filter = emptyStore.defaults.defaultFilter;
 var guid = require('mout/random/guid');
-var P = JSData.DSUtils.Promise;
+var keys = require('mout/object/keys');
+var P = DSUtils.Promise;
 
 function Defaults() {
 
@@ -214,6 +352,10 @@ function Defaults() {
 function DSLocalStorageAdapter(options) {
   options = options || {};
 
+  if (!DSUtils.isString(options.namespace)) {
+    options.namespace = 'DS';
+  }
+
   /**
    * @doc property
    * @id DSLocalStorageAdapter.properties:defaults
@@ -223,7 +365,43 @@ function DSLocalStorageAdapter(options) {
    */
   this.defaults = new Defaults();
   deepMixIn(this.defaults, options);
+
+  this.keys = {};
+  this.collections = {};
 }
+
+DSLocalStorageAdapter.prototype.getKeys = function (name, options) {
+  if (!this.keys[name]) {
+    var keysPath = makePath(options.namespace || this.defaults.namespace, 'DSKeys', name);
+    var keysJson = localStorage.getItem(keysPath);
+    if (keysJson) {
+      this.keys[name] = fromJson(keysJson);
+    } else {
+      localStorage.setItem(keysPath, toJson({}));
+      this.keys[name] = {};
+    }
+  }
+  this.collections[name] = keys(this.keys[name]);
+  return this.keys[name];
+};
+
+DSLocalStorageAdapter.prototype.saveKeys = function (name, options) {
+  var keysPath = makePath(options.namespace || this.defaults.namespace, 'DSKeys', name);
+  this.collections[name] = keys(this.keys[name]);
+  localStorage.setItem(keysPath, toJson(this.keys[name]));
+};
+
+DSLocalStorageAdapter.prototype.ensureId = function (id, name, options) {
+  var keys = this.getKeys(name, options);
+  keys[id] = 1;
+  this.saveKeys(name, options);
+};
+
+DSLocalStorageAdapter.prototype.removeId = function (id, name, options) {
+  var keys = this.getKeys(name, options);
+  delete keys[id];
+  this.saveKeys(name, options);
+};
 
 /**
  * @doc method
@@ -243,7 +421,7 @@ function DSLocalStorageAdapter(options) {
 DSLocalStorageAdapter.prototype.GET = function (key) {
   return new P(function (resolve) {
     var item = localStorage.getItem(key);
-    resolve(item ? DSUtils.fromJson(item) : undefined);
+    resolve(item ? fromJson(item) : undefined);
   });
 };
 
@@ -319,15 +497,12 @@ DSLocalStorageAdapter.prototype.DEL = function (key) {
  *
  * @param {object} resourceConfig DS resource definition object:
  * @param {string|number} id Primary key of the entity to retrieve.
- * @param {object=} options Optional configuration. Properties:
- *
- * - `{string=}` - `baseUrl` - Base path to use.
- *
+ * @param {object=} options Optional configuration.
  * @returns {Promise} Promise.
  */
 DSLocalStorageAdapter.prototype.find = function find(resourceConfig, id, options) {
   options = options || {};
-  return this.GET(makePath(options.baseUrl || resourceConfig.baseUrl, resourceConfig.endpoint, id));
+  return this.GET(makePath(options.namespace || this.defaults.namespace, resourceConfig.getEndpoint(id, options), id));
 };
 
 /**
@@ -337,8 +512,22 @@ DSLocalStorageAdapter.prototype.find = function find(resourceConfig, id, options
  * @description
  * Not supported.
  */
-DSLocalStorageAdapter.prototype.findAll = function () {
-  throw new Error('DSLocalStorageAdapter.findAll is not supported!');
+DSLocalStorageAdapter.prototype.findAll = function (resourceConfig, params, options) {
+  var _this = this;
+  return new P(function (resolve) {
+    options = options || {};
+    if (!('allowSimpleWhere' in options)) {
+      options.allowSimpleWhere = true;
+    }
+    var items = [];
+    forEach(_this.collections[resourceConfig.name], function (id) {
+      var itemJson = localStorage.getItem(makePath(options.namespace || _this.defaults.namespace, resourceConfig.getEndpoint(id, options), id));
+      if (itemJson) {
+        items.push(fromJson(itemJson));
+      }
+    });
+    resolve(filter.call(emptyStore, items, resourceConfig.name, params, options));
+  });
 };
 
 /**
@@ -367,19 +556,20 @@ DSLocalStorageAdapter.prototype.findAll = function () {
  *
  * @param {object} resourceConfig DS resource definition object:
  * @param {object} attrs Attributes to create in localStorage.
- * @param {object=} options Optional configuration. Properties:
- *
- * - `{string=}` - `baseUrl` - Base path to use.
- *
+ * @param {object=} options Optional configuration.
  * @returns {Promise} Promise.
  */
 DSLocalStorageAdapter.prototype.create = function (resourceConfig, attrs, options) {
+  var _this = this;
   attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid();
   options = options || {};
   return this.PUT(
-    makePath(options.baseUrl || resourceConfig.baseUrl, resourceConfig.getEndpoint(attrs, options), attrs[resourceConfig.idAttribute]),
+    makePath(options.namespace || this.defaults.namespace, resourceConfig.getEndpoint(attrs, options), attrs[resourceConfig.idAttribute]),
     attrs
-  );
+  ).then(function (item) {
+      _this.ensureId(item[resourceConfig.idAttribute], resourceConfig.name, options);
+      return item;
+    });
 };
 
 /**
@@ -408,15 +598,16 @@ DSLocalStorageAdapter.prototype.create = function (resourceConfig, attrs, option
  * @param {object} resourceConfig DS resource definition object:
  * @param {string|number} id Primary key of the entity to retrieve.
  * @param {object} attrs Attributes with which to update the entity.
- * @param {object=} options Optional configuration. Properties:
- *
- * - `{string=}` - `baseUrl` - Base path to use.
- *
+ * @param {object=} options Optional configuration.
  * @returns {Promise} Promise.
  */
 DSLocalStorageAdapter.prototype.update = function (resourceConfig, id, attrs, options) {
+  var _this = this;
   options = options || {};
-  return this.PUT(makePath(options.baseUrl || resourceConfig.baseUrl, resourceConfig.getEndpoint(id, options), id), attrs);
+  return this.PUT(makePath(options.namespace || this.defaults.namespace, resourceConfig.getEndpoint(id, options), id), attrs).then(function (item) {
+    _this.ensureId(item[resourceConfig.idAttribute], resourceConfig.name, options);
+    return item;
+  });
 };
 
 /**
@@ -426,8 +617,15 @@ DSLocalStorageAdapter.prototype.update = function (resourceConfig, id, attrs, op
  * @description
  * Not supported.
  */
-DSLocalStorageAdapter.prototype.updateAll = function () {
-  throw new Error('DSLocalStorageAdapter.updateAll is not supported!');
+DSLocalStorageAdapter.prototype.updateAll = function (resourceConfig, attrs, params, options) {
+  var _this = this;
+  return this.findAll(resourceConfig, params, options).then(function (items) {
+    var tasks = [];
+    forEach(items, function (item) {
+      tasks.push(_this.update(resourceConfig, item[resourceConfig.idAttribute], attrs, options));
+    });
+    return P.all(tasks);
+  });
 };
 
 /**
@@ -455,15 +653,15 @@ DSLocalStorageAdapter.prototype.updateAll = function () {
  *
  * @param {object} resourceConfig DS resource definition object:
  * @param {string|number} id Primary key of the entity to destroy.
- * @param {object=} options Optional configuration. Properties:
- *
- * - `{string=}` - `baseUrl` - Base path to use.
- *
+ * @param {object=} options Optional configuration.
  * @returns {Promise} Promise.
  */
 DSLocalStorageAdapter.prototype.destroy = function (resourceConfig, id, options) {
+  var _this = this;
   options = options || {};
-  return this.DEL(makePath(options.baseUrl || resourceConfig.baseUrl, resourceConfig.getEndpoint(id, options), id));
+  return this.DEL(makePath(options.namespace || this.defaults.namespace, resourceConfig.getEndpoint(id, options), id)).then(function () {
+    _this.removeId(id, resourceConfig.name, options);
+  });
 };
 
 /**
@@ -473,11 +671,18 @@ DSLocalStorageAdapter.prototype.destroy = function (resourceConfig, id, options)
  * @description
  * Not supported.
  */
-DSLocalStorageAdapter.prototype.destroyAll = function () {
-  throw new Error('Not supported!');
+DSLocalStorageAdapter.prototype.destroyAll = function (resourceConfig, params, options) {
+  var _this = this;
+  return this.findAll(resourceConfig, params, options).then(function (items) {
+    var tasks = [];
+    forEach(items, function (item) {
+      tasks.push(_this.destroy(resourceConfig, item[resourceConfig.idAttribute], options));
+    });
+    return P.all(tasks);
+  });
 };
 
 module.exports = DSLocalStorageAdapter;
 
-},{"js-data":"js-data","mout/random/guid":7}]},{},[12])(12)
+},{"js-data":"js-data","mout/object/keys":9,"mout/random/guid":11}]},{},[16])(16)
 });

@@ -1,5 +1,5 @@
 // Setup global test variables
-var dsLocalStorageAdapter, User;
+var dsLocalStorageAdapter, User, datastore;
 
 // Helper globals
 var fail = function (msg) {
@@ -33,10 +33,16 @@ var TYPES_EXCEPT_FUNCTION = ['string', 123, 123.123, null, undefined, {}, [], tr
 
 // Setup before each test
 beforeEach(function () {
-  User = {
-    relationFields: [],
-    class: 'User',
-    idAttribute: 'id'
-  };
+  localStorage.clear();
+  var JSData;
+  if (!window && typeof module !== 'undefined' && module.exports) {
+    JSData = require('js-data');
+  } else {
+    JSData = window.JSData;
+  }
+
+  datastore = new JSData.DS();
+
+  User = datastore.defineResource('user');
   dsLocalStorageAdapter = new DSLocalStorageAdapter();
 });
