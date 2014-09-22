@@ -1,11 +1,11 @@
-<img src="https://raw.githubusercontent.com/js-data/js-data/prototype/js-data.png" alt="js-data logo" title="js-data" align="right" width="64" height="64" />
+<img src="https://raw.githubusercontent.com/js-data/js-data/master/js-data.png" alt="js-data logo" title="js-data" align="right" width="64" height="64" />
 
 ## js-data-localstorage
 
-localStorage adapter for js-data.
+localStorage adapter for [js-data](http://www.js-data.io/js-data).
 
-## Documentation
-[http://www.js-data.io/js-data-localstorage](http://www.js-data.io/js-data-localstorage)
+## API Documentation
+[DSLocalStorageAdapter](https://github.com/js-data/js-data/wiki/DSLocalStorageAdapter)
 
 ## Demo
 [https://js-data-localstorage.firebaseapp.com/](https://js-data-localstorage.firebaseapp.com/)
@@ -22,7 +22,20 @@ localStorage adapter for js-data.
 | Coverage | [![Coverage Status](https://coveralls.io/repos/js-data/js-data-localstorage/badge.png?branch=master)](https://coveralls.io/r/js-data/js-data-localstorage?branch=master) |
 
 ## Quick Start
-`bower install --save js-data-localstorage` or `npm install --save js-data-localstorage`.
+`bower install --save js-data js-data-localstorage` or `npm install --save js-data js-data-localstorage`.
+
+Load `js-data-localstorage.js` after `js-data.js`.
+
+```js
+var adapter = new DSHttpAdapter();
+
+var store = new JSData.DS();
+
+store.defaults.DSHttpAdapter = adapter;
+store.defaults.defaultAdapter = 'DSHttpAdapter';
+
+// "store" will now use the localstorage adapter for all async operations
+```
 
 ## Changelog
 [CHANGELOG.md](https://github.com/js-data/js-data-localstorage/blob/master/CHANGELOG.md)
