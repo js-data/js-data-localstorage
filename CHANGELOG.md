@@ -1,6 +1,6 @@
 ##### 0.3.0 - 23 September 2014
 
-- Find now throws an errors if the item isn't found
+- Find now throws an error if the item isn't found
 
 ##### 0.2.0 - 21 September 2014
 

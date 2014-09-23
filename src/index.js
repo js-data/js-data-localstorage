@@ -32,7 +32,9 @@ function DSLocalStorageAdapter(options) {
   deepMixIn(this.defaults, options);
 }
 
-DSLocalStorageAdapter.prototype.getIds = function (name, options) {
+var dsLocalStorageAdapterPrototype = DSLocalStorageAdapter.prototype;
+
+dsLocalStorageAdapterPrototype.getIds = function (name, options) {
   var ids;
   var idsPath = makePath(options.namespace || this.defaults.namespace, 'DSKeys', name);
   var idsJson = localStorage.getItem(idsPath);
@@ -45,31 +47,31 @@ DSLocalStorageAdapter.prototype.getIds = function (name, options) {
   return ids;
 };
 
-DSLocalStorageAdapter.prototype.saveKeys = function (ids, name, options) {
+dsLocalStorageAdapterPrototype.saveKeys = function (ids, name, options) {
   var keysPath = makePath(options.namespace || this.defaults.namespace, 'DSKeys', name);
   localStorage.setItem(keysPath, toJson(ids));
 };
 
-DSLocalStorageAdapter.prototype.ensureId = function (id, name, options) {
+dsLocalStorageAdapterPrototype.ensureId = function (id, name, options) {
   var ids = this.getIds(name, options);
   ids[id] = 1;
   this.saveKeys(ids, name, options);
 };
 
-DSLocalStorageAdapter.prototype.removeId = function (id, name, options) {
+dsLocalStorageAdapterPrototype.removeId = function (id, name, options) {
   var ids = this.getIds(name, options);
   delete ids[id];
   this.saveKeys(ids, name, options);
 };
 
-DSLocalStorageAdapter.prototype.GET = function (key) {
+dsLocalStorageAdapterPrototype.GET = function (key) {
   return new P(function (resolve) {
     var item = localStorage.getItem(key);
     resolve(item ? fromJson(item) : undefined);
   });
 };
 
-DSLocalStorageAdapter.prototype.PUT = function (key, value) {
+dsLocalStorageAdapterPrototype.PUT = function (key, value) {
   var DSLocalStorageAdapter = this;
   return DSLocalStorageAdapter.GET(key).then(function (item) {
     if (item) {
@@ -80,14 +82,14 @@ DSLocalStorageAdapter.prototype.PUT = function (key, value) {
   });
 };
 
-DSLocalStorageAdapter.prototype.DEL = function (key) {
+dsLocalStorageAdapterPrototype.DEL = function (key) {
   return new P(function (resolve) {
     localStorage.removeItem(key);
     resolve();
   });
 };
 
-DSLocalStorageAdapter.prototype.find = function find(resourceConfig, id, options) {
+dsLocalStorageAdapterPrototype.find = function find(resourceConfig, id, options) {
   options = options || {};
   return this.GET(makePath(options.namespace || this.defaults.namespace, resourceConfig.getEndpoint(id, options), id)).then(function (item) {
     if (!item) {
@@ -98,7 +100,7 @@ DSLocalStorageAdapter.prototype.find = function find(resourceConfig, id, options
   });
 };
 
-DSLocalStorageAdapter.prototype.findAll = function (resourceConfig, params, options) {
+dsLocalStorageAdapterPrototype.findAll = function (resourceConfig, params, options) {
   var _this = this;
   return new P(function (resolve) {
     options = options || {};
@@ -117,7 +119,7 @@ DSLocalStorageAdapter.prototype.findAll = function (resourceConfig, params, opti
   });
 };
 
-DSLocalStorageAdapter.prototype.create = function (resourceConfig, attrs, options) {
+dsLocalStorageAdapterPrototype.create = function (resourceConfig, attrs, options) {
   var _this = this;
   attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid();
   options = options || {};
@@ -130,7 +132,7 @@ DSLocalStorageAdapter.prototype.create = function (resourceConfig, attrs, option
     });
 };
 
-DSLocalStorageAdapter.prototype.update = function (resourceConfig, id, attrs, options) {
+dsLocalStorageAdapterPrototype.update = function (resourceConfig, id, attrs, options) {
   var _this = this;
   options = options || {};
   return this.PUT(makePath(options.namespace || this.defaults.namespace, resourceConfig.getEndpoint(id, options), id), attrs).then(function (item) {
@@ -139,7 +141,7 @@ DSLocalStorageAdapter.prototype.update = function (resourceConfig, id, attrs, op
   });
 };
 
-DSLocalStorageAdapter.prototype.updateAll = function (resourceConfig, attrs, params, options) {
+dsLocalStorageAdapterPrototype.updateAll = function (resourceConfig, attrs, params, options) {
   var _this = this;
   return this.findAll(resourceConfig, params, options).then(function (items) {
     var tasks = [];
@@ -150,7 +152,7 @@ DSLocalStorageAdapter.prototype.updateAll = function (resourceConfig, attrs, par
   });
 };
 
-DSLocalStorageAdapter.prototype.destroy = function (resourceConfig, id, options) {
+dsLocalStorageAdapterPrototype.destroy = function (resourceConfig, id, options) {
   var _this = this;
   options = options || {};
   return this.DEL(makePath(options.namespace || this.defaults.namespace, resourceConfig.getEndpoint(id, options), id)).then(function () {
@@ -158,7 +160,7 @@ DSLocalStorageAdapter.prototype.destroy = function (resourceConfig, id, options)
   });
 };
 
-DSLocalStorageAdapter.prototype.destroyAll = function (resourceConfig, params, options) {
+dsLocalStorageAdapterPrototype.destroyAll = function (resourceConfig, params, options) {
   var _this = this;
   return this.findAll(resourceConfig, params, options).then(function (items) {
     var tasks = [];

@@ -41,14 +41,14 @@ store.defaults.defaultAdapter = 'DSHttpAdapter';
 [CHANGELOG.md](https://github.com/js-data/js-data-localstorage/blob/master/CHANGELOG.md)
 
 ## Community
-- [Mailing List](https://groups.google.com/forum/?fromgroups#!forum/js-data-project) - Ask your questions!
+- [Mailing List](https://groups.io/org/groupsio/jsdata) - Ask your questions!
 - [Issues](https://github.com/js-data/js-data-localstorage/issues) - Found a bug? Feature request? Submit an issue!
 - [GitHub](https://github.com/js-data/js-data-localstorage) - View the source code for js-data.
 - [Contributing Guide](https://github.com/js-data/js-data-localstorage/blob/master/CONTRIBUTING.md)
 
 ## Contributing
 
-First, feel free to contact me with questions. [Mailing List](https://groups.google.com/forum/?fromgroups#!forum/js-data-project). [Issues](https://github.com/js-data/js-data-localstorage/issues).
+First, feel free to contact me with questions. [Mailing List](https://groups.io/org/groupsio/jsdata). [Issues](https://github.com/js-data/js-data-localstorage/issues).
 
 1. Contribute to the issue that is the reason you'll be developing in the first place
 1. Fork js-data-localstorage
