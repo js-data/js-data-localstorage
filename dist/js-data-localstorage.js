@@ -1,7 +1,7 @@
 /**
 * @author Jason Dobry <jason.dobry@gmail.com>
 * @file js-data-localstorage.js
-* @version 0.1.1 - Homepage <http://www.js-data.iojs-data-localstorage/>
+* @version 0.3.0 - Homepage <http://www.js-data.iojs-data-localstorage/>
 * @copyright (c) 2014 Jason Dobry 
 * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
 *
@@ -410,7 +410,13 @@ DSLocalStorageAdapter.prototype.DEL = function (key) {
 
 DSLocalStorageAdapter.prototype.find = function find(resourceConfig, id, options) {
   options = options || {};
-  return this.GET(makePath(options.namespace || this.defaults.namespace, resourceConfig.getEndpoint(id, options), id));
+  return this.GET(makePath(options.namespace || this.defaults.namespace, resourceConfig.getEndpoint(id, options), id)).then(function (item) {
+    if (!item) {
+      return P.reject(new Error('Not Found!'));
+    } else {
+      return item;
+    }
+  });
 };
 
 DSLocalStorageAdapter.prototype.findAll = function (resourceConfig, params, options) {

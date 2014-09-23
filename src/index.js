@@ -89,7 +89,13 @@ DSLocalStorageAdapter.prototype.DEL = function (key) {
 
 DSLocalStorageAdapter.prototype.find = function find(resourceConfig, id, options) {
   options = options || {};
-  return this.GET(makePath(options.namespace || this.defaults.namespace, resourceConfig.getEndpoint(id, options), id));
+  return this.GET(makePath(options.namespace || this.defaults.namespace, resourceConfig.getEndpoint(id, options), id)).then(function (item) {
+    if (!item) {
+      return P.reject(new Error('Not Found!'));
+    } else {
+      return item;
+    }
+  });
 };
 
 DSLocalStorageAdapter.prototype.findAll = function (resourceConfig, params, options) {

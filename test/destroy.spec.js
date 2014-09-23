@@ -6,13 +6,16 @@ describe('dsLocalStorageAdapter#destroy', function () {
         id = user.id;
         return dsLocalStorageAdapter.destroy(User, user.id);
       })
-      .then(function () {
+      .then(function (user) {
+        assert.isFalse(!!user);
         return dsLocalStorageAdapter.find(User, id);
       })
-      .then(function (destroyedUser) {
-        assert.isFalse(!!destroyedUser);
-        done();
+      .then(function () {
+        done('Should not have reached here!');
       })
-      .catch(done);
+      .catch(function (err) {
+        assert.equal(err.message, 'Not Found!');
+        done();
+      });
   });
 });

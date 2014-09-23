@@ -14,10 +14,16 @@ describe('dsLocalStorageAdapter#find', function () {
         assert.deepEqual(user, { id: id, name: 'John' });
         return dsLocalStorageAdapter.destroy(User, id);
       })
-      .then(function (destroyedUser) {
-        assert.isFalse(!!destroyedUser);
-        done();
+      .then(function (user) {
+        assert.isFalse(!!user);
+        return dsLocalStorageAdapter.find(User, id);
       })
-      .catch(done);
+      .then(function () {
+        done('Should not have reached here!');
+      })
+      .catch(function (err) {
+        assert.equal(err.message, 'Not Found!');
+        done();
+      });
   });
 });

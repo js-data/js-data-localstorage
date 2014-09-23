@@ -1,7 +1,7 @@
 {
   "name": "js-data-localstorage",
   "description": "localStorage adapter for js-data.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "homepage": "http://www.js-data.io/js-data-localstorage",
   "repository": {
     "type": "git",
@@ -16,6 +16,14 @@
       "type": "MIT",
       "url": "https://github.com/js-data/js-data-localstorage/blob/master/LICENSE"
     }
+  ],
+  "keywords": [
+    "data",
+    "datastore",
+    "store",
+    "database",
+    "adapter",
+    "localstorage"
   ],
   "devDependencies": {
     "grunt": "^0.4.5",
