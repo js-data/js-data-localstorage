@@ -2,7 +2,7 @@
 module.exports = function (config) {
 	config.set({
 		// base path, that will be used to resolve files and exclude
-		basePath: './',
+		baseUrl: './',
 		frameworks: ['sinon', 'chai', 'mocha'],
 		plugins: [
 			// these plugins will be require() by Karma

@@ -21,22 +21,27 @@ function Defaults() {
 
 }
 
+Defaults.prototype.basePath = '';
+
 function DSLocalStorageAdapter(options) {
   options = options || {};
-
-  if (!DSUtils.isString(options.namespace)) {
-    options.namespace = 'DS';
-  }
-
   this.defaults = new Defaults();
   deepMixIn(this.defaults, options);
 }
 
 var dsLocalStorageAdapterPrototype = DSLocalStorageAdapter.prototype;
 
-dsLocalStorageAdapterPrototype.getIds = function (name, options) {
+dsLocalStorageAdapterPrototype.getPath = function (resourceConfig, options) {
+  return makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.name);
+};
+
+dsLocalStorageAdapterPrototype.getIdPath = function (resourceConfig, options, id) {
+  return makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.getEndpoint(id, options), id);
+};
+
+dsLocalStorageAdapterPrototype.getIds = function (resourceConfig, options) {
   var ids;
-  var idsPath = makePath(options.namespace || this.defaults.namespace, 'DSKeys', name);
+  var idsPath = this.getPath(resourceConfig, options);
   var idsJson = localStorage.getItem(idsPath);
   if (idsJson) {
     ids = fromJson(idsJson);
@@ -47,21 +52,21 @@ dsLocalStorageAdapterPrototype.getIds = function (name, options) {
   return ids;
 };
 
-dsLocalStorageAdapterPrototype.saveKeys = function (ids, name, options) {
-  var keysPath = makePath(options.namespace || this.defaults.namespace, 'DSKeys', name);
+dsLocalStorageAdapterPrototype.saveKeys = function (ids, resourceConfig, options) {
+  var keysPath = this.getPath(resourceConfig, options);
   localStorage.setItem(keysPath, toJson(ids));
 };
 
-dsLocalStorageAdapterPrototype.ensureId = function (id, name, options) {
-  var ids = this.getIds(name, options);
+dsLocalStorageAdapterPrototype.ensureId = function (id, resourceConfig, options) {
+  var ids = this.getIds(resourceConfig, options);
   ids[id] = 1;
-  this.saveKeys(ids, name, options);
+  this.saveKeys(ids, resourceConfig, options);
 };
 
-dsLocalStorageAdapterPrototype.removeId = function (id, name, options) {
-  var ids = this.getIds(name, options);
+dsLocalStorageAdapterPrototype.removeId = function (id, resourceConfig, options) {
+  var ids = this.getIds(resourceConfig, options);
   delete ids[id];
-  this.saveKeys(ids, name, options);
+  this.saveKeys(ids, resourceConfig, options);
 };
 
 dsLocalStorageAdapterPrototype.GET = function (key) {
@@ -91,7 +96,7 @@ dsLocalStorageAdapterPrototype.DEL = function (key) {
 
 dsLocalStorageAdapterPrototype.find = function find(resourceConfig, id, options) {
   options = options || {};
-  return this.GET(makePath(options.namespace || this.defaults.namespace, resourceConfig.getEndpoint(id, options), id)).then(function (item) {
+  return this.GET(this.getIdPath(resourceConfig, options, id)).then(function (item) {
     if (!item) {
       return P.reject(new Error('Not Found!'));
     } else {
@@ -108,9 +113,9 @@ dsLocalStorageAdapterPrototype.findAll = function (resourceConfig, params, optio
       options.allowSimpleWhere = true;
     }
     var items = [];
-    var ids = keys(_this.getIds(resourceConfig.name, options));
+    var ids = keys(_this.getIds(resourceConfig, options));
     forEach(ids, function (id) {
-      var itemJson = localStorage.getItem(makePath(options.namespace || _this.defaults.namespace, resourceConfig.getEndpoint(id, options), id));
+      var itemJson = localStorage.getItem(_this.getIdPath(resourceConfig, options, id));
       if (itemJson) {
         items.push(fromJson(itemJson));
       }
@@ -124,10 +129,10 @@ dsLocalStorageAdapterPrototype.create = function (resourceConfig, attrs, options
   attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid();
   options = options || {};
   return this.PUT(
-    makePath(options.namespace || this.defaults.namespace, resourceConfig.getEndpoint(attrs, options), attrs[resourceConfig.idAttribute]),
+    makePath(this.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])),
     attrs
   ).then(function (item) {
-      _this.ensureId(item[resourceConfig.idAttribute], resourceConfig.name, options);
+      _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
       return item;
     });
 };
@@ -135,8 +140,8 @@ dsLocalStorageAdapterPrototype.create = function (resourceConfig, attrs, options
 dsLocalStorageAdapterPrototype.update = function (resourceConfig, id, attrs, options) {
   var _this = this;
   options = options || {};
-  return this.PUT(makePath(options.namespace || this.defaults.namespace, resourceConfig.getEndpoint(id, options), id), attrs).then(function (item) {
-    _this.ensureId(item[resourceConfig.idAttribute], resourceConfig.name, options);
+  return this.PUT(this.getIdPath(resourceConfig, options, id), attrs).then(function (item) {
+    _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
     return item;
   });
 };
@@ -155,7 +160,7 @@ dsLocalStorageAdapterPrototype.updateAll = function (resourceConfig, attrs, para
 dsLocalStorageAdapterPrototype.destroy = function (resourceConfig, id, options) {
   var _this = this;
   options = options || {};
-  return this.DEL(makePath(options.namespace || this.defaults.namespace, resourceConfig.getEndpoint(id, options), id)).then(function () {
+  return this.DEL(this.getIdPath(resourceConfig, options, id)).then(function () {
     _this.removeId(id, resourceConfig.name, options);
   });
 };
