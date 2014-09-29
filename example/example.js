@@ -1,11 +1,10 @@
 (function () {
   var dsLocalStorageAdapter = new DSLocalStorageAdapter();
 
-  var datastore = new JSData.DS();
-  datastore.defaults.defaultAdapter = 'dsLocalStorageAdapter';
-  datastore.adapters.dsLocalStorageAdapter = dsLocalStorageAdapter;
+  var store = new JSData.DS();
+  store.registerAdapter('DSLocalStorageAdapter', dsLocalStorageAdapter, { default: true });
 
-  var User = datastore.defineResource('user');
+  var User = store.defineResource('user');
 
   angular.module('localStorage-example', [])
     .controller('localStorageCtrl', function ($scope, $timeout) {
