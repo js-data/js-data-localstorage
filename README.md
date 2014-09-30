@@ -30,7 +30,7 @@ Load `js-data-localstorage.js` after `js-data.js`.
 var adapter = new DSLocalStorageAdapter();
 
 var store = new JSData.DS();
-store.registerAdapter('DSLocalStorageAdapter', adapter, { default: true });
+store.registerAdapter('localstorage', adapter, { default: true });
 
 // "store" will now use the localstorage adapter for all async operations
 ```

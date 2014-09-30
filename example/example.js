@@ -1,8 +1,8 @@
 (function () {
-  var dsLocalStorageAdapter = new DSLocalStorageAdapter();
+  var adapter = new DSLocalStorageAdapter();
 
   var store = new JSData.DS();
-  store.registerAdapter('DSLocalStorageAdapter', dsLocalStorageAdapter, { default: true });
+  store.registerAdapter('localstorage', adapter, { default: true });
 
   var User = store.defineResource('user');
 
