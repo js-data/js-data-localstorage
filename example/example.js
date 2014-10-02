@@ -1,13 +1,15 @@
 (function () {
-  var adapter = new DSLocalStorageAdapter();
-
-  var store = new JSData.DS();
-  store.registerAdapter('localstorage', adapter, { default: true });
-
-  var User = store.defineResource('user');
-
   angular.module('localStorage-example', [])
-    .controller('localStorageCtrl', function ($scope, $timeout) {
+    .factory('store', function () {
+      var store = new JSData.DS();
+      store.registerAdapter('localstorage', new DSLocalStorageAdapter(), { default: true });
+      return store;
+    })
+    .factory('User', function (store) {
+      return store.defineResource('user');
+    })
+    .controller('localStorageCtrl', function ($scope, $timeout, User) {
+      User.findAll();
       $scope.add = function (user) {
         $scope.creating = true;
         User.create(user).then(function () {
