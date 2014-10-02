@@ -6,8 +6,10 @@
   <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.25/angular.min.js"></script>
   <script src="https://github.com/js-data/js-data/releases/download/0.4.1/js-data-0.4.1.min.js"></script>
+  <!--<script-->
+    <!--src="https://github.com/js-data/js-data-localstorage/releases/download/0.4.1/js-data-localstorage-0.4.1.min.js"></script>-->
   <script
-    src="https://github.com/js-data/js-data-localstorage/releases/download/0.4.1/js-data-localstorage-0.4.1.min.js"></script>
+    src="../dist/js-data-localstorage.js"></script>
   <script src="./example.js"></script>
 </head>
 <body data-ng-controller="localStorageCtrl as lsCtrl">
@@ -52,12 +54,15 @@ angular.module('localStorage-example', [])
     return store.defineResource('user');
   })
   .controller('localStorageCtrl', function ($scope, $timeout, User) {
-    User.findAll();
+    User.findAll().then(function () {
+      $scope.$apply();
+    });
 
     $scope.add = function (user) {
       $scope.creating = true;
       User.create(user).then(function () {
         $scope.creating = false;
+        lsCtrl.name = '';
         $timeout();
       }, function () {
         $scope.creating = false;

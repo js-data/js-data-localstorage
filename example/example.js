@@ -9,11 +9,15 @@
       return store.defineResource('user');
     })
     .controller('localStorageCtrl', function ($scope, $timeout, User) {
-      User.findAll();
+      var lsCtrl = this;
+      User.findAll().then(function () {
+        $scope.$apply();
+      });
       $scope.add = function (user) {
         $scope.creating = true;
         User.create(user).then(function () {
           $scope.creating = false;
+          lsCtrl.name = '';
           $timeout();
         }, function () {
           $scope.creating = false;
