@@ -1,7 +1,7 @@
 {
   "name": "js-data-localstorage",
   "description": "localStorage adapter for js-data.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "homepage": "http://www.js-data.io/js-data-localstorage",
   "repository": {
     "type": "git",
@@ -29,10 +29,7 @@
     "karma.conf.js",
     "karma.start.js"
   ],
-  "peerDependencies": {
-    "js-data": "~0.4.x"
-  },
-  "devDependencies": {
+  "dependencies": {
     "js-data": "~0.4.x"
   }
 }

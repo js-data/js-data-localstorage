@@ -1,3 +1,8 @@
+##### 0.4.1 - 01 October 2014
+
+###### Other
+- Better checking for the js-data dependency
+
 ##### 0.4.0 - 25 September 2014
 
 ###### Breaking API changes

@@ -1,7 +1,7 @@
 /**
 * @author Jason Dobry <jason.dobry@gmail.com>
 * @file js-data-localstorage.js
-* @version 0.4.0 - Homepage <http://www.js-data.iojs-data-localstorage/>
+* @version 0.4.1 - Homepage <http://www.js-data.iojs-data-localstorage/>
 * @copyright (c) 2014 Jason Dobry 
 * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
 *
@@ -320,10 +320,21 @@ var rand = require('./rand');
 
 },{}],16:[function(require,module,exports){
 var JSData;
-if (!window && typeof module !== 'undefined' && module.exports) {
+
+try {
   JSData = require('js-data');
-} else {
-  JSData = window.JSData;
+} catch (e) {
+}
+
+if (!JSData) {
+  try {
+    JSData = window.JSData;
+  } catch (e) {
+  }
+}
+
+if (!JSData) {
+  throw new Error('js-data must be loaded!');
 }
 
 var emptyStore = new JSData.DS();
