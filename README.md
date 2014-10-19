@@ -5,7 +5,7 @@
 localStorage adapter for [js-data](http://www.js-data.io/js-data).
 
 ## API Documentation
-[DSLocalStorageAdapter](https://github.com/js-data/js-data/wiki/DSLocalStorageAdapter)
+[DSLocalStorageAdapter](http://www.js-data.io/docs/dslocalstorageadapter)
 
 ## Demo
 [https://js-data-localstorage.firebaseapp.com/](https://js-data-localstorage.firebaseapp.com/)
