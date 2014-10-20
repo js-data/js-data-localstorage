@@ -2,7 +2,7 @@
 
 ## js-data-localstorage
 
-localStorage adapter for [js-data](http://www.js-data.io/js-data).
+localStorage adapter for [js-data](http://www.js-data.io/).
 
 ## API Documentation
 [DSLocalStorageAdapter](http://www.js-data.io/docs/dslocalstorageadapter)
