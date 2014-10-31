@@ -1,7 +1,7 @@
 /**
 * @author Jason Dobry <jason.dobry@gmail.com>
 * @file js-data-localstorage.js
-* @version 0.4.1 - Homepage <http://www.js-data.iojs-data-localstorage/>
+* @version 1.0.0-alpha.1 - Homepage <http://www.js-data.iojs-data-localstorage/>
 * @copyright (c) 2014 Jason Dobry 
 * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
 *
