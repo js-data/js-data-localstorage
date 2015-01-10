@@ -1,3 +1,7 @@
+##### 1.0.0-beta.1 - 10 January 2014
+
+Now in beta.
+
 ##### 1.0.0-alpha.1 - 31 October 2014
 
 Update dependencies

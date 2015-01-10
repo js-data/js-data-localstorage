@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/js-data/js-data/master/js-data.png" alt="js-data logo" title="js-data" align="right" width="64" height="64" />
 
-## js-data-localstorage
+## js-data-localstorage [![Bower version](https://badge.fury.io/bo/js-data-localstorage.png)](http://badge.fury.io/bo/js-data-localstorage) [![NPM version](https://badge.fury.io/js/js-data-localstorage.png)](http://badge.fury.io/js/js-data-localstorage)
 
 localStorage adapter for [js-data](http://www.js-data.io/).
 
@@ -61,7 +61,7 @@ First, feel free to contact me with questions. [Mailing List](https://groups.io/
 
 The MIT License (MIT)
 
-Copyright (c) 2014 Jason Dobry
+Copyright (c) 2014-2015 Jason Dobry
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
