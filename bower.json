@@ -4,14 +4,14 @@
   "homepage": "http://www.js-data.io/js-data-localstorage",
   "repository": {
     "type": "git",
-    "url": "git://github.com/js-data/js-data-localstorage.git"
+    "url": "https://github.com/js-data/js-data-localstorage.git"
   },
   "author": {
     "name": "Jason Dobry",
     "url": "http://www.pseudobry.com",
     "email": "jason.dobry@gmail.com"
   },
-  "main": "./dist/js-data-localstorage.min.js",
+  "main": "./dist/js-data-localstorage.js",
   "ignore": [
     ".idea/",
     ".*",
@@ -29,6 +29,6 @@
     "karma.start.js"
   ],
   "dependencies": {
-    "js-data": "~1.0.x"
+    "js-data": ">=1.0.0"
   }
 }
