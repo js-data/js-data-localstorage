@@ -1,5 +1,5 @@
 (function () {
-  angular.module('localStorage-example', [])
+  angular.module('localStorage-example', ['js-data'])
     .factory('store', function () {
       var store = new JSData.DS();
 
@@ -15,20 +15,18 @@
 
       User.findAll().then(function (users) {
         $scope.users = users;
-        $scope.$apply();
       });
 
+      User.bindAll({}, $scope, 'users');
+
       $scope.add = function (user) {
-        User.create(user).then(function () {
+        return User.create(user).then(function () {
           lsCtrl.name = '';
-          $scope.$apply();
         });
       };
 
       $scope.remove = function (user) {
-        User.destroy(user.id).then(function () {
-          $scope.$apply();
-        });
+        return User.destroy(user.id);
       };
     });
 })();
