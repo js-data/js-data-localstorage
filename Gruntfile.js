@@ -39,6 +39,8 @@ module.exports = function (grunt) {
     uglify: {
       main: {
         options: {
+          sourceMap: true,
+          sourceMapName: 'dist/js-data-localstorage.min.map',
           banner: '/*!\n' +
           '* js-data-localstorage\n' +
           '* @version <%= pkg.version %> - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>\n' +

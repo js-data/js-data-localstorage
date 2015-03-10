@@ -404,9 +404,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var MIN_INT = __webpack_require__(12);
-	var MAX_INT = __webpack_require__(13);
-	var rand = __webpack_require__(14);
+	var MIN_INT = __webpack_require__(11);
+	var MAX_INT = __webpack_require__(12);
+	var rand = __webpack_require__(13);
 
 	    /**
 	     * Gets random integer inside range or snap to min/max values.
@@ -428,7 +428,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var isKind = __webpack_require__(11);
+	var isKind = __webpack_require__(14);
 	    /**
 	     */
 	    var isArray = Array.isArray || function (val) {
@@ -542,21 +542,6 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var kindOf = __webpack_require__(15);
-	    /**
-	     * Check if value is from a specific "kind".
-	     */
-	    function isKind(val, kind){
-	        return kindOf(val) === kind;
-	    }
-	    module.exports = isKind;
-
-
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
 	/**
 	 * @constant Minimum 32-bit signed integer value (-2^31).
 	 */
@@ -566,7 +551,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 13 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -578,12 +563,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 14 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var random = __webpack_require__(16);
-	var MIN_INT = __webpack_require__(12);
-	var MAX_INT = __webpack_require__(13);
+	var random = __webpack_require__(15);
+	var MIN_INT = __webpack_require__(11);
+	var MAX_INT = __webpack_require__(12);
 
 	    /**
 	     * Returns random number inside range
@@ -599,7 +584,46 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var kindOf = __webpack_require__(16);
+	    /**
+	     * Check if value is from a specific "kind".
+	     */
+	    function isKind(val, kind){
+	        return kindOf(val) === kind;
+	    }
+	    module.exports = isKind;
+
+
+
+/***/ },
 /* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+
+	    /**
+	     * Just a wrapper to Math.random. No methods inside mout/random should call
+	     * Math.random() directly so we can inject the pseudo-random number
+	     * generator if needed (ie. in case we need a seeded random or a better
+	     * algorithm than the native one)
+	     */
+	    function random(){
+	        return random.get();
+	    }
+
+	    // we expose the method so it can be swapped if needed
+	    random.get = Math.random;
+
+	    module.exports = random;
+
+
+
+
+/***/ },
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -621,30 +645,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    }
 	    module.exports = kindOf;
-
-
-
-/***/ },
-/* 16 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-
-	    /**
-	     * Just a wrapper to Math.random. No methods inside mout/random should call
-	     * Math.random() directly so we can inject the pseudo-random number
-	     * generator if needed (ie. in case we need a seeded random or a better
-	     * algorithm than the native one)
-	     */
-	    function random(){
-	        return random.get();
-	    }
-
-	    // we expose the method so it can be swapped if needed
-	    random.get = Math.random;
-
-	    module.exports = random;
-
 
 
 
