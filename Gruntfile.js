@@ -2,7 +2,7 @@
  * js-data-localstorage
  * http://github.com/js-data/js-data-localstorage
  *
- * Copyright (c) 2014 Jason Dobry <http://www.js-data.io/js-data-localstorage>
+ * Copyright (c) 2014-2015 Jason Dobry <http://www.js-data.io/docs/dslocalstorageadapter>
  * Licensed under the MIT license. <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
  */
 module.exports = function (grunt) {
@@ -13,7 +13,15 @@ module.exports = function (grunt) {
   });
   require('time-grunt')(grunt);
 
+  var webpack = require('webpack');
   var pkg = grunt.file.readJSON('package.json');
+  var banner = 'js-data-localstorage\n' +
+    '@version ' + pkg.version + ' - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>\n' +
+    '@author Jason Dobry <jason.dobry@gmail.com>\n' +
+    '@copyright (c) 2014-2015 Jason Dobry \n' +
+    '@license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>\n' +
+    '\n' +
+    '@overview localStorage adapter for js-data.';
 
   // Project configuration.
   grunt.initConfig({
@@ -21,10 +29,6 @@ module.exports = function (grunt) {
     clean: {
       coverage: ['coverage/'],
       dist: ['dist/']
-    },
-    jshint: {
-      all: ['Gruntfile.js', 'src/**/*.js', 'test/*.js'],
-      jshintrc: '.jshintrc'
     },
     watch: {
       dist: {
@@ -35,32 +39,52 @@ module.exports = function (grunt) {
     uglify: {
       main: {
         options: {
-          banner: '/**\n' +
-            '* @author Jason Dobry <jason.dobry@gmail.com>\n' +
-            '* @file js-data-localstorage.min.js\n' +
-            '* @version <%= pkg.version %> - Homepage <http://wwwjs-data.io/js-data-localstorage>\n' +
-            '* @copyright (c) 2014 Jason Dobry\n' +
-            '* @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>\n' +
-            '*\n' +
-            '* @overview localStorage adapter for js-data.\n' +
-            '*/\n'
+          banner: '/*!\n' +
+          '* js-data-localstorage\n' +
+          '* @version <%= pkg.version %> - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>\n' +
+          '* @author Jason Dobry <jason.dobry@gmail.com>\n' +
+          '* @copyright (c) 2014-2015 Jason Dobry\n' +
+          '* @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>\n' +
+          '*\n' +
+          '* @overview localStorage adapter for js-data.\n' +
+          '*/\n'
         },
         files: {
           'dist/js-data-localstorage.min.js': ['dist/js-data-localstorage.js']
         }
       }
     },
-    browserify: {
-      options: {
-        browserifyOptions: {
-          standalone: 'DSLocalStorageAdapter'
-        },
-        external: ['js-data']
-      },
+    webpack: {
       dist: {
-        files: {
-          'dist/js-data-localstorage.js': ['src/index.js']
-        }
+        entry: './src/index.js',
+        output: {
+          filename: './dist/js-data-localstorage.js',
+          libraryTarget: 'umd',
+          library: 'DSLocalStorageAdapter'
+        },
+        externals: {
+          'js-data': {
+            amd: 'js-data',
+            commonjs: 'js-data',
+            commonjs2: 'js-data',
+            root: 'JSData'
+          }
+        },
+        module: {
+          loaders: [
+            { test: /(src)(.+)\.js$/, exclude: /node_modules/, loader: 'babel-loader?blacklist=useStrict' }
+          ],
+          preLoaders: [
+            {
+              test: /(src)(.+)\.js$|(test)(.+)\.js$/, // include .js files
+              exclude: /node_modules/, // exclude any and all files in the node_modules folder
+              loader: "jshint-loader?failOnHint=true"
+            }
+          ]
+        },
+        plugins: [
+          new webpack.BannerPlugin(banner)
+        ]
       }
     },
     karma: {
@@ -104,30 +128,10 @@ module.exports = function (grunt) {
     grunt.file.write(filePath, file);
   });
 
-  grunt.registerTask('banner', function () {
-    var file = grunt.file.read('dist/js-data-localstorage.js');
-
-    var banner = '/**\n' +
-      '* @author Jason Dobry <jason.dobry@gmail.com>\n' +
-      '* @file js-data-localstorage.js\n' +
-      '* @version ' + pkg.version + ' - Homepage <http://www.js-data.iojs-data-localstorage/>\n' +
-      '* @copyright (c) 2014 Jason Dobry \n' +
-      '* @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>\n' +
-      '*\n' +
-      '* @overview localStorage adapter for js-data.\n' +
-      '*/\n';
-
-    file = banner + file;
-
-    grunt.file.write('dist/js-data-localstorage.js', file);
-  });
-
   grunt.registerTask('test', ['build', 'karma:ci', 'karma:min']);
   grunt.registerTask('build', [
     'clean',
-    'jshint',
-    'browserify',
-    'banner',
+    'webpack',
     'uglify:main'
   ]);
   grunt.registerTask('go', ['build', 'watch:dist']);

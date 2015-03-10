@@ -1,27 +1,28 @@
 <img src="https://raw.githubusercontent.com/js-data/js-data/master/js-data.png" alt="js-data logo" title="js-data" align="right" width="64" height="64" />
 
-## js-data-localstorage [![Bower version](https://badge.fury.io/bo/js-data-localstorage.png)](http://badge.fury.io/bo/js-data-localstorage) [![NPM version](https://badge.fury.io/js/js-data-localstorage.png)](http://badge.fury.io/js/js-data-localstorage)
+## js-data-localstorage [![bower version](https://img.shields.io/bower/v/js-data-localstorage.svg?style=flat-square)](https://www.npmjs.org/package/js-data-localstorage) [![npm version](https://img.shields.io/npm/v/js-data-localstorage.svg?style=flat-square)](https://www.npmjs.org/package/js-data-localstorage) [![Circle CI](https://img.shields.io/circleci/project/js-data/js-data-localstorage/master.svg?style=flat-square)](https://circleci.com/gh/js-data/js-data-localstorage/tree/master) [![npm downloads](https://img.shields.io/npm/dm/js-data-localstorage.svg?style=flat-square)](https://www.npmjs.org/package/js-data-localstorage) [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://github.com/js-data/js-data-localstorage/blob/master/LICENSE)
 
 localStorage adapter for [js-data](http://www.js-data.io/).
 
-## API Documentation
+### API Documentation
 [DSLocalStorageAdapter](http://www.js-data.io/docs/dslocalstorageadapter)
 
-## Demo
+### Demo
 [https://js-data-localstorage.firebaseapp.com/](https://js-data-localstorage.firebaseapp.com/)
 
-## Project Status
+### Project Status
 
-| Branch | Master |
-| ------ | ------ |
-| Bower | [![Bower version](https://badge.fury.io/bo/js-data-localstorage.png)](http://badge.fury.io/bo/js-data-localstorage) |
-| NPM | [![NPM version](https://badge.fury.io/js/js-data-localstorage.png)](http://badge.fury.io/js/js-data-localstorage) |
-| Build Status | [![Build Status](https://travis-ci.org/js-data/js-data-localstorage.png?branch=master)](https://travis-ci.org/js-data/js-data-localstorage) |
-| Code Climate | [![Code Climate](https://codeclimate.com/github/js-data/js-data-localstorage.png)](https://codeclimate.com/github/js-data/js-data-localstorage) |
-| Dependency Status | [![Dependency Status](https://gemnasium.com/js-data/js-data-localstorage.png)](https://gemnasium.com/js-data/js-data-localstorage) |
-| Coverage | [![Coverage Status](https://coveralls.io/repos/js-data/js-data-localstorage/badge.png?branch=master)](https://coveralls.io/r/js-data/js-data-localstorage?branch=master) |
+__Latest Release:__ [![Latest Release](https://img.shields.io/github/release/js-data/js-data-localstorage.svg?style=flat-square)](https://github.com/js-data/js-data-localstorage/releases)
 
-## Quick Start
+__Status:__
+
+[![Dependency Status](https://img.shields.io/gemnasium/js-data/js-data-localstorage.svg?style=flat-square)](https://gemnasium.com/js-data/js-data-localstorage) [![Coverage Status](https://img.shields.io/coveralls/js-data/js-data-localstorage/master.svg?style=flat-square)](https://coveralls.io/r/js-data/js-data-localstorage?branch=master) [![Codacity](https://img.shields.io/codacy/e7690b906dfa471ebcc8b2bdc52e9662.svg?style=flat-square)](https://www.codacy.com/public/jasondobry/js-data-localstorage/dashboard)
+
+__Supported Platforms:__
+
+[![browsers](https://img.shields.io/badge/Browser-Chrome%2CFirefox%2CSafari%2COpera%2CIE%209%2B%2CiOS%20Safari%207.1%2B%2CAndroid%20Browser%202.3%2B-green.svg?style=flat-square)](https://github.com/js-data/js-data)
+
+### Quick Start
 `bower install --save js-data js-data-localstorage` or `npm install --save js-data js-data-localstorage`.
 
 Load `js-data-localstorage.js` after `js-data.js`.
@@ -35,16 +36,16 @@ store.registerAdapter('localstorage', adapter, { default: true });
 // "store" will now use the localstorage adapter for all async operations
 ```
 
-## Changelog
+### Changelog
 [CHANGELOG.md](https://github.com/js-data/js-data-localstorage/blob/master/CHANGELOG.md)
 
-## Community
+### Community
 - [Mailing List](https://groups.io/org/groupsio/jsdata) - Ask your questions!
 - [Issues](https://github.com/js-data/js-data-localstorage/issues) - Found a bug? Feature request? Submit an issue!
 - [GitHub](https://github.com/js-data/js-data-localstorage) - View the source code for js-data.
 - [Contributing Guide](https://github.com/js-data/js-data-localstorage/blob/master/CONTRIBUTING.md)
 
-## Contributing
+### Contributing
 
 First, feel free to contact me with questions. [Mailing List](https://groups.io/org/groupsio/jsdata). [Issues](https://github.com/js-data/js-data-localstorage/issues).
 
@@ -57,7 +58,7 @@ First, feel free to contact me with questions. [Mailing List](https://groups.io/
 1. Write your code, including relevant documentation and tests
 1. Submit a PR and we'll review
 
-## License
+### License
 
 The MIT License (MIT)
 

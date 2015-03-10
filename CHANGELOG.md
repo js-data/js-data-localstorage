@@ -1,3 +1,7 @@
+##### 1.0.1 - 10 March 2015
+
+Convert to ES6.
+
 ##### 1.0.0 - 03 February 2015
 
 Stable Version 1.0.0
