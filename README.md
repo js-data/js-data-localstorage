@@ -16,7 +16,7 @@ __Latest Release:__ [![Latest Release](https://img.shields.io/github/release/js-
 
 __Status:__
 
-[![Dependency Status](https://img.shields.io/gemnasium/js-data/js-data-localstorage.svg?style=flat-square)](https://gemnasium.com/js-data/js-data-localstorage) [![Coverage Status](https://img.shields.io/coveralls/js-data/js-data-localstorage/master.svg?style=flat-square)](https://coveralls.io/r/js-data/js-data-localstorage?branch=master) [![Codacity](https://img.shields.io/codacy/e7690b906dfa471ebcc8b2bdc52e9662.svg?style=flat-square)](https://www.codacy.com/public/jasondobry/js-data-localstorage/dashboard)
+[![Dependency Status](https://img.shields.io/gemnasium/js-data/js-data-localstorage.svg?style=flat-square)](https://gemnasium.com/js-data/js-data-localstorage) [![Coverage Status](https://img.shields.io/coveralls/js-data/js-data-localstorage/master.svg?style=flat-square)](https://coveralls.io/r/js-data/js-data-localstorage?branch=master) [![Codacity](https://img.shields.io/codacy/b8e46008e6ad45159b7a6927dbfd66c3.svg?style=flat-square)](https://www.codacy.com/public/jasondobry/js-data-localstorage/dashboard)
 
 __Supported Platforms:__
 
