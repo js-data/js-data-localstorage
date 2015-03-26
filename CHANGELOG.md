@@ -1,3 +1,9 @@
+##### 1.1.0 - 25 March 2015
+
+Upgrade dependencies. js-data is now a peer dependency.
+
+Fixed #7
+
 ##### 1.0.1 - 10 March 2015
 
 Convert to ES6.

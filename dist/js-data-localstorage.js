@@ -1,6 +1,6 @@
 /*!
  * js-data-localstorage
- * @version 1.0.1 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
+ * @version 1.1.0 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
  * @author Jason Dobry <jason.dobry@gmail.com>
  * @copyright (c) 2014-2015 Jason Dobry 
  * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
@@ -90,8 +90,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	var toJson = DSUtils.toJson;
 	var fromJson = DSUtils.fromJson;
 	var forEach = DSUtils.forEach;
+	var removeCircular = JSData.DSUtils.removeCircular;
 	var filter = emptyStore.defaults.defaultFilter;
-	var guid = __webpack_require__(2);
+	var omit = __webpack_require__(2);
+	var guid = __webpack_require__(4);
 	var keys = __webpack_require__(3);
 	var P = DSUtils.Promise;
 
@@ -167,7 +169,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var DSLocalStorageAdapter = this;
 	        return DSLocalStorageAdapter.GET(key).then(function (item) {
 	          if (item) {
-	            deepMixIn(item, value);
+	            deepMixIn(item, removeCircular(value));
 	          }
 	          localStorage.setItem(key, toJson(item || value));
 	          return DSLocalStorageAdapter.GET(key);
@@ -214,7 +216,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid();
 	        options = options || {};
-	        return _this.PUT(makePath(_this.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])), attrs).then(function (item) {
+	        return _this.PUT(makePath(_this.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])), omit(attrs, resourceConfig.relationFields)).then(function (item) {
 	          _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
 	          return item;
 	        });
@@ -224,7 +226,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      value: function update(resourceConfig, id, attrs, options) {
 	        var _this = this;
 	        options = options || {};
-	        return _this.PUT(_this.getIdPath(resourceConfig, options, id), attrs).then(function (item) {
+	        return _this.PUT(_this.getIdPath(resourceConfig, options, id), omit(attrs, resourceConfig.relationFields)).then(function (item) {
 	          _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
 	          return item;
 	        });
@@ -236,7 +238,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return _this.findAll(resourceConfig, params, options).then(function (items) {
 	          var tasks = [];
 	          forEach(items, function (item) {
-	            return tasks.push(_this.update(resourceConfig, item[resourceConfig.idAttribute], attrs, options));
+	            return tasks.push(_this.update(resourceConfig, item[resourceConfig.idAttribute], omit(attrs, resourceConfig.relationFields), options));
 	          });
 	          return P.all(tasks);
 	        });
@@ -281,8 +283,57 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var randHex = __webpack_require__(4);
-	var choice = __webpack_require__(5);
+	var slice = __webpack_require__(8);
+	var contains = __webpack_require__(9);
+
+	    /**
+	     * Return a copy of the object, filtered to only contain properties except the blacklisted keys.
+	     */
+	    function omit(obj, var_keys){
+	        var keys = typeof arguments[1] !== 'string'? arguments[1] : slice(arguments, 1),
+	            out = {};
+
+	        for (var property in obj) {
+	            if (obj.hasOwnProperty(property) && !contains(keys, property)) {
+	                out[property] = obj[property];
+	            }
+	        }
+	        return out;
+	    }
+
+	    module.exports = omit;
+
+
+
+
+/***/ },
+/* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var forOwn = __webpack_require__(5);
+
+	    /**
+	     * Get object keys
+	     */
+	     var keys = Object.keys || function (obj) {
+	            var keys = [];
+	            forOwn(obj, function(val, key){
+	                keys.push(key);
+	            });
+	            return keys;
+	        };
+
+	    module.exports = keys;
+
+
+
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var randHex = __webpack_require__(6);
+	var choice = __webpack_require__(7);
 
 	  /**
 	   * Returns pseudo-random guid (UUID v4)
@@ -308,32 +359,35 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 3 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var forOwn = __webpack_require__(6);
+	var hasOwn = __webpack_require__(10);
+	var forIn = __webpack_require__(11);
 
 	    /**
-	     * Get object keys
+	     * Similar to Array/forEach but works over object properties and fixes Don't
+	     * Enum bug on IE.
+	     * based on: http://whattheheadsaid.com/2010/10/a-safer-object-keys-compatibility-implementation
 	     */
-	     var keys = Object.keys || function (obj) {
-	            var keys = [];
-	            forOwn(obj, function(val, key){
-	                keys.push(key);
-	            });
-	            return keys;
-	        };
+	    function forOwn(obj, fn, thisObj){
+	        forIn(obj, function(val, key){
+	            if (hasOwn(obj, key)) {
+	                return fn.call(thisObj, obj[key], key, obj);
+	            }
+	        });
+	    }
 
-	    module.exports = keys;
+	    module.exports = forOwn;
 
 
 
 
 /***/ },
-/* 4 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var choice = __webpack_require__(5);
+	var choice = __webpack_require__(7);
 
 	    var _chars = '0123456789abcdef'.split('');
 
@@ -355,11 +409,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 5 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var randInt = __webpack_require__(7);
-	var isArray = __webpack_require__(8);
+	var randInt = __webpack_require__(12);
+	var isArray = __webpack_require__(13);
 
 	    /**
 	     * Returns a random element from the supplied arguments
@@ -376,70 +430,64 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 6 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var hasOwn = __webpack_require__(9);
-	var forIn = __webpack_require__(10);
-
-	    /**
-	     * Similar to Array/forEach but works over object properties and fixes Don't
-	     * Enum bug on IE.
-	     * based on: http://whattheheadsaid.com/2010/10/a-safer-object-keys-compatibility-implementation
-	     */
-	    function forOwn(obj, fn, thisObj){
-	        forIn(obj, function(val, key){
-	            if (hasOwn(obj, key)) {
-	                return fn.call(thisObj, obj[key], key, obj);
-	            }
-	        });
-	    }
-
-	    module.exports = forOwn;
-
-
-
-
-/***/ },
-/* 7 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var MIN_INT = __webpack_require__(11);
-	var MAX_INT = __webpack_require__(12);
-	var rand = __webpack_require__(13);
-
-	    /**
-	     * Gets random integer inside range or snap to min/max values.
-	     */
-	    function randInt(min, max){
-	        min = min == null? MIN_INT : ~~min;
-	        max = max == null? MAX_INT : ~~max;
-	        // can't be max + 0.5 otherwise it will round up if `rand`
-	        // returns `max` causing it to overflow range.
-	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
-	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
-	    }
-
-	    module.exports = randInt;
-
-
-
-/***/ },
 /* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var isKind = __webpack_require__(14);
+	
+
 	    /**
+	     * Create slice of source array or array-like object
 	     */
-	    var isArray = Array.isArray || function (val) {
-	        return isKind(val, 'Array');
-	    };
-	    module.exports = isArray;
+	    function slice(arr, start, end){
+	        var len = arr.length;
+
+	        if (start == null) {
+	            start = 0;
+	        } else if (start < 0) {
+	            start = Math.max(len + start, 0);
+	        } else {
+	            start = Math.min(start, len);
+	        }
+
+	        if (end == null) {
+	            end = len;
+	        } else if (end < 0) {
+	            end = Math.max(len + end, 0);
+	        } else {
+	            end = Math.min(end, len);
+	        }
+
+	        var result = [];
+	        while (start < end) {
+	            result.push(arr[start++]);
+	        }
+
+	        return result;
+	    }
+
+	    module.exports = slice;
+
 
 
 
 /***/ },
 /* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var indexOf = __webpack_require__(14);
+
+	    /**
+	     * If array contains values.
+	     */
+	    function contains(arr, val) {
+	        return indexOf(arr, val) !== -1;
+	    }
+	    module.exports = contains;
+
+
+
+/***/ },
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -457,10 +505,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var hasOwn = __webpack_require__(9);
+	var hasOwn = __webpack_require__(10);
 
 	    var _hasDontEnumBug,
 	        _dontEnums;
@@ -539,7 +587,79 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 11 */
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var MIN_INT = __webpack_require__(15);
+	var MAX_INT = __webpack_require__(16);
+	var rand = __webpack_require__(17);
+
+	    /**
+	     * Gets random integer inside range or snap to min/max values.
+	     */
+	    function randInt(min, max){
+	        min = min == null? MIN_INT : ~~min;
+	        max = max == null? MAX_INT : ~~max;
+	        // can't be max + 0.5 otherwise it will round up if `rand`
+	        // returns `max` causing it to overflow range.
+	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
+	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
+	    }
+
+	    module.exports = randInt;
+
+
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var isKind = __webpack_require__(18);
+	    /**
+	     */
+	    var isArray = Array.isArray || function (val) {
+	        return isKind(val, 'Array');
+	    };
+	    module.exports = isArray;
+
+
+
+/***/ },
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+
+	    /**
+	     * Array.indexOf
+	     */
+	    function indexOf(arr, item, fromIndex) {
+	        fromIndex = fromIndex || 0;
+	        if (arr == null) {
+	            return -1;
+	        }
+
+	        var len = arr.length,
+	            i = fromIndex < 0 ? len + fromIndex : fromIndex;
+	        while (i < len) {
+	            // we iterate over sparse items since there is no way to make it
+	            // work properly on IE 7-8. see #64
+	            if (arr[i] === item) {
+	                return i;
+	            }
+
+	            i++;
+	        }
+
+	        return -1;
+	    }
+
+	    module.exports = indexOf;
+
+
+
+/***/ },
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -551,7 +671,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 12 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -563,12 +683,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 13 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var random = __webpack_require__(15);
-	var MIN_INT = __webpack_require__(11);
-	var MAX_INT = __webpack_require__(12);
+	var random = __webpack_require__(19);
+	var MIN_INT = __webpack_require__(15);
+	var MAX_INT = __webpack_require__(16);
 
 	    /**
 	     * Returns random number inside range
@@ -584,10 +704,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 14 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var kindOf = __webpack_require__(16);
+	var kindOf = __webpack_require__(20);
 	    /**
 	     * Check if value is from a specific "kind".
 	     */
@@ -599,7 +719,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 15 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -623,7 +743,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 16 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	

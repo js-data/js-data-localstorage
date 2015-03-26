@@ -23,7 +23,9 @@ let deepMixIn = DSUtils.deepMixIn;
 let toJson = DSUtils.toJson;
 let fromJson = DSUtils.fromJson;
 let forEach = DSUtils.forEach;
+let removeCircular = JSData.DSUtils.removeCircular;
 let filter = emptyStore.defaults.defaultFilter;
+let omit = require('mout/object/omit');
 let guid = require('mout/random/guid');
 let keys = require('mout/object/keys');
 let P = DSUtils.Promise;
@@ -89,7 +91,7 @@ class DSLocalStorageAdapter {
     let DSLocalStorageAdapter = this;
     return DSLocalStorageAdapter.GET(key).then(function (item) {
       if (item) {
-        deepMixIn(item, value);
+        deepMixIn(item, removeCircular(value));
       }
       localStorage.setItem(key, toJson(item || value));
       return DSLocalStorageAdapter.GET(key);
@@ -132,7 +134,7 @@ class DSLocalStorageAdapter {
     options = options || {};
     return _this.PUT(
       makePath(_this.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])),
-      attrs
+      omit(attrs, resourceConfig.relationFields)
     ).then(item => {
         _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
         return item;
@@ -142,7 +144,7 @@ class DSLocalStorageAdapter {
   update(resourceConfig, id, attrs, options) {
     let _this = this;
     options = options || {};
-    return _this.PUT(_this.getIdPath(resourceConfig, options, id), attrs).then(item => {
+    return _this.PUT(_this.getIdPath(resourceConfig, options, id), omit(attrs, resourceConfig.relationFields)).then(item => {
       _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
       return item;
     });
@@ -152,7 +154,7 @@ class DSLocalStorageAdapter {
     let _this = this;
     return _this.findAll(resourceConfig, params, options).then(items => {
       let tasks = [];
-      forEach(items, item => tasks.push(_this.update(resourceConfig, item[resourceConfig.idAttribute], attrs, options)));
+      forEach(items, item => tasks.push(_this.update(resourceConfig, item[resourceConfig.idAttribute], omit(attrs, resourceConfig.relationFields), options)));
       return P.all(tasks);
     });
   }
