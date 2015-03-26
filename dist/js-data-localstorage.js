@@ -1,6 +1,6 @@
 /*!
  * js-data-localstorage
- * @version 1.1.0 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
+ * @version 1.1.1 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
  * @author Jason Dobry <jason.dobry@gmail.com>
  * @copyright (c) 2014-2015 Jason Dobry 
  * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
@@ -9,11 +9,11 @@
  */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory((function webpackLoadOptionalExternalModule() { try { return require("js-data"); } catch(e) {} }()));
+		module.exports = factory(require("js-data"));
 	else if(typeof define === 'function' && define.amd)
 		define(["js-data"], factory);
 	else if(typeof exports === 'object')
-		exports["DSLocalStorageAdapter"] = factory((function webpackLoadOptionalExternalModule() { try { return require("js-data"); } catch(e) {} }()));
+		exports["DSLocalStorageAdapter"] = factory(require("js-data"));
 	else
 		root["DSLocalStorageAdapter"] = factory(root["JSData"]);
 })(this, function(__WEBPACK_EXTERNAL_MODULE_1__) {
@@ -63,25 +63,13 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
+
 	var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 	var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
-	var JSData = undefined;
-
-	try {
-	  JSData = __webpack_require__(1);
-	} catch (e) {}
-
-	if (!JSData) {
-	  try {
-	    JSData = window.JSData;
-	  } catch (e) {}
-	}
-
-	if (!JSData) {
-	  throw new Error("js-data must be loaded!");
-	}
+	var JSData = _interopRequire(__webpack_require__(1));
 
 	var emptyStore = new JSData.DS();
 	var DSUtils = JSData.DSUtils;
@@ -90,7 +78,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var toJson = DSUtils.toJson;
 	var fromJson = DSUtils.fromJson;
 	var forEach = DSUtils.forEach;
-	var removeCircular = JSData.DSUtils.removeCircular;
+	var removeCircular = DSUtils.removeCircular;
 	var filter = emptyStore.defaults.defaultFilter;
 	var omit = __webpack_require__(2);
 	var guid = __webpack_require__(4);
@@ -216,7 +204,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid();
 	        options = options || {};
-	        return _this.PUT(makePath(_this.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])), omit(attrs, resourceConfig.relationFields)).then(function (item) {
+	        return _this.PUT(makePath(_this.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])), omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
 	          _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
 	          return item;
 	        });
@@ -226,7 +214,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      value: function update(resourceConfig, id, attrs, options) {
 	        var _this = this;
 	        options = options || {};
-	        return _this.PUT(_this.getIdPath(resourceConfig, options, id), omit(attrs, resourceConfig.relationFields)).then(function (item) {
+	        return _this.PUT(_this.getIdPath(resourceConfig, options, id), omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
 	          _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
 	          return item;
 	        });
@@ -238,7 +226,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return _this.findAll(resourceConfig, params, options).then(function (items) {
 	          var tasks = [];
 	          forEach(items, function (item) {
-	            return tasks.push(_this.update(resourceConfig, item[resourceConfig.idAttribute], omit(attrs, resourceConfig.relationFields), options));
+	            return tasks.push(_this.update(resourceConfig, item[resourceConfig.idAttribute], omit(attrs, resourceConfig.relationFields || []), options));
 	          });
 	          return P.all(tasks);
 	        });
@@ -276,15 +264,14 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	if(typeof __WEBPACK_EXTERNAL_MODULE_1__ === 'undefined') {var e = new Error("Cannot find module \"undefined\""); e.code = 'MODULE_NOT_FOUND'; throw e;}
 	module.exports = __WEBPACK_EXTERNAL_MODULE_1__;
 
 /***/ },
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var slice = __webpack_require__(8);
-	var contains = __webpack_require__(9);
+	var slice = __webpack_require__(7);
+	var contains = __webpack_require__(8);
 
 	    /**
 	     * Return a copy of the object, filtered to only contain properties except the blacklisted keys.
@@ -310,7 +297,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var forOwn = __webpack_require__(5);
+	var forOwn = __webpack_require__(9);
 
 	    /**
 	     * Get object keys
@@ -332,8 +319,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var randHex = __webpack_require__(6);
-	var choice = __webpack_require__(7);
+	var randHex = __webpack_require__(5);
+	var choice = __webpack_require__(6);
 
 	  /**
 	   * Returns pseudo-random guid (UUID v4)
@@ -362,32 +349,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var hasOwn = __webpack_require__(10);
-	var forIn = __webpack_require__(11);
-
-	    /**
-	     * Similar to Array/forEach but works over object properties and fixes Don't
-	     * Enum bug on IE.
-	     * based on: http://whattheheadsaid.com/2010/10/a-safer-object-keys-compatibility-implementation
-	     */
-	    function forOwn(obj, fn, thisObj){
-	        forIn(obj, function(val, key){
-	            if (hasOwn(obj, key)) {
-	                return fn.call(thisObj, obj[key], key, obj);
-	            }
-	        });
-	    }
-
-	    module.exports = forOwn;
-
-
-
-
-/***/ },
-/* 6 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var choice = __webpack_require__(7);
+	var choice = __webpack_require__(6);
 
 	    var _chars = '0123456789abcdef'.split('');
 
@@ -409,11 +371,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 7 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var randInt = __webpack_require__(12);
-	var isArray = __webpack_require__(13);
+	var randInt = __webpack_require__(10);
+	var isArray = __webpack_require__(11);
 
 	    /**
 	     * Returns a random element from the supplied arguments
@@ -430,7 +392,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 8 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -471,10 +433,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 9 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var indexOf = __webpack_require__(14);
+	var indexOf = __webpack_require__(12);
 
 	    /**
 	     * If array contains values.
@@ -487,7 +449,104 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var hasOwn = __webpack_require__(13);
+	var forIn = __webpack_require__(14);
+
+	    /**
+	     * Similar to Array/forEach but works over object properties and fixes Don't
+	     * Enum bug on IE.
+	     * based on: http://whattheheadsaid.com/2010/10/a-safer-object-keys-compatibility-implementation
+	     */
+	    function forOwn(obj, fn, thisObj){
+	        forIn(obj, function(val, key){
+	            if (hasOwn(obj, key)) {
+	                return fn.call(thisObj, obj[key], key, obj);
+	            }
+	        });
+	    }
+
+	    module.exports = forOwn;
+
+
+
+
+/***/ },
 /* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var MIN_INT = __webpack_require__(15);
+	var MAX_INT = __webpack_require__(16);
+	var rand = __webpack_require__(17);
+
+	    /**
+	     * Gets random integer inside range or snap to min/max values.
+	     */
+	    function randInt(min, max){
+	        min = min == null? MIN_INT : ~~min;
+	        max = max == null? MAX_INT : ~~max;
+	        // can't be max + 0.5 otherwise it will round up if `rand`
+	        // returns `max` causing it to overflow range.
+	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
+	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
+	    }
+
+	    module.exports = randInt;
+
+
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var isKind = __webpack_require__(18);
+	    /**
+	     */
+	    var isArray = Array.isArray || function (val) {
+	        return isKind(val, 'Array');
+	    };
+	    module.exports = isArray;
+
+
+
+/***/ },
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+
+	    /**
+	     * Array.indexOf
+	     */
+	    function indexOf(arr, item, fromIndex) {
+	        fromIndex = fromIndex || 0;
+	        if (arr == null) {
+	            return -1;
+	        }
+
+	        var len = arr.length,
+	            i = fromIndex < 0 ? len + fromIndex : fromIndex;
+	        while (i < len) {
+	            // we iterate over sparse items since there is no way to make it
+	            // work properly on IE 7-8. see #64
+	            if (arr[i] === item) {
+	                return i;
+	            }
+
+	            i++;
+	        }
+
+	        return -1;
+	    }
+
+	    module.exports = indexOf;
+
+
+
+/***/ },
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -505,10 +564,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 11 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var hasOwn = __webpack_require__(10);
+	var hasOwn = __webpack_require__(13);
 
 	    var _hasDontEnumBug,
 	        _dontEnums;
@@ -583,78 +642,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    module.exports = forIn;
 
-
-
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var MIN_INT = __webpack_require__(15);
-	var MAX_INT = __webpack_require__(16);
-	var rand = __webpack_require__(17);
-
-	    /**
-	     * Gets random integer inside range or snap to min/max values.
-	     */
-	    function randInt(min, max){
-	        min = min == null? MIN_INT : ~~min;
-	        max = max == null? MAX_INT : ~~max;
-	        // can't be max + 0.5 otherwise it will round up if `rand`
-	        // returns `max` causing it to overflow range.
-	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
-	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
-	    }
-
-	    module.exports = randInt;
-
-
-
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var isKind = __webpack_require__(18);
-	    /**
-	     */
-	    var isArray = Array.isArray || function (val) {
-	        return isKind(val, 'Array');
-	    };
-	    module.exports = isArray;
-
-
-
-/***/ },
-/* 14 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-
-	    /**
-	     * Array.indexOf
-	     */
-	    function indexOf(arr, item, fromIndex) {
-	        fromIndex = fromIndex || 0;
-	        if (arr == null) {
-	            return -1;
-	        }
-
-	        var len = arr.length,
-	            i = fromIndex < 0 ? len + fromIndex : fromIndex;
-	        while (i < len) {
-	            // we iterate over sparse items since there is no way to make it
-	            // work properly on IE 7-8. see #64
-	            if (arr[i] === item) {
-	                return i;
-	            }
-
-	            i++;
-	        }
-
-	        return -1;
-	    }
-
-	    module.exports = indexOf;
 
 
 

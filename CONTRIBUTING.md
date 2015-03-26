@@ -8,7 +8,7 @@ When submitting issues on GitHub, please include as much detail as possible to m
 - better - A [plnkr](http://plnkr.co/), [fiddle](http://jsfiddle.net/), or [bin](http://jsbin.com/?html,output) that demonstrates the issue
 - best - A Pull Request that fixes the issue, including test coverage for the issue and the fix
 
-[Github Issues](https://github.com/js-data/js-data/issues).
+[Github Issues](https://github.com/js-data/js-data-localstorage/issues).
 
 #### Pull Requests
 

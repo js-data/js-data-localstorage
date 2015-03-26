@@ -1,20 +1,4 @@
-let JSData;
-
-try {
-  JSData = require('js-data');
-} catch (e) {
-}
-
-if (!JSData) {
-  try {
-    JSData = window.JSData;
-  } catch (e) {
-  }
-}
-
-if (!JSData) {
-  throw new Error('js-data must be loaded!');
-}
+import JSData from 'js-data';
 
 let emptyStore = new JSData.DS();
 let DSUtils = JSData.DSUtils;
@@ -23,7 +7,7 @@ let deepMixIn = DSUtils.deepMixIn;
 let toJson = DSUtils.toJson;
 let fromJson = DSUtils.fromJson;
 let forEach = DSUtils.forEach;
-let removeCircular = JSData.DSUtils.removeCircular;
+let removeCircular = DSUtils.removeCircular;
 let filter = emptyStore.defaults.defaultFilter;
 let omit = require('mout/object/omit');
 let guid = require('mout/random/guid');
@@ -134,7 +118,7 @@ class DSLocalStorageAdapter {
     options = options || {};
     return _this.PUT(
       makePath(_this.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])),
-      omit(attrs, resourceConfig.relationFields)
+      omit(attrs, resourceConfig.relationFields || [])
     ).then(item => {
         _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
         return item;
@@ -144,7 +128,7 @@ class DSLocalStorageAdapter {
   update(resourceConfig, id, attrs, options) {
     let _this = this;
     options = options || {};
-    return _this.PUT(_this.getIdPath(resourceConfig, options, id), omit(attrs, resourceConfig.relationFields)).then(item => {
+    return _this.PUT(_this.getIdPath(resourceConfig, options, id), omit(attrs, resourceConfig.relationFields || [])).then(item => {
       _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
       return item;
     });
@@ -154,7 +138,7 @@ class DSLocalStorageAdapter {
     let _this = this;
     return _this.findAll(resourceConfig, params, options).then(items => {
       let tasks = [];
-      forEach(items, item => tasks.push(_this.update(resourceConfig, item[resourceConfig.idAttribute], omit(attrs, resourceConfig.relationFields), options)));
+      forEach(items, item => tasks.push(_this.update(resourceConfig, item[resourceConfig.idAttribute], omit(attrs, resourceConfig.relationFields || []), options)));
       return P.all(tasks);
     });
   }

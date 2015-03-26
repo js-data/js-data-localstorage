@@ -1,3 +1,7 @@
+##### 1.1.1 - 25 March 2015
+
+Using `import` instead of require. Fix possible value undefined errors.
+
 ##### 1.1.0 - 25 March 2015
 
 Upgrade dependencies. js-data is now a peer dependency.
