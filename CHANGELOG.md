@@ -1,3 +1,7 @@
+##### 2.0.0-beta.1 - 17 April 2015
+
+Prepare for 2.0.
+
 ##### 1.1.1 - 25 March 2015
 
 Using `import` instead of require. Fix possible value undefined errors.

@@ -101,10 +101,11 @@ module.exports = function (grunt) {
         preprocessors: {}
       },
       min: {
-        browsers: ['Firefox', 'PhantomJS'],
+        browsers: ['Chrome', 'Firefox', 'PhantomJS'],
         options: {
           files: [
-            'bower_components/js-data/dist/js-data.min.js',
+            'node_modules/es6-promise/dist/es6-promise.js',
+            'node_modules/js-data/dist/js-data.min.js',
             'dist/js-data-localstorage.min.js',
             'karma.start.js',
             'test/**/*.js'
@@ -112,7 +113,7 @@ module.exports = function (grunt) {
         }
       },
       ci: {
-        browsers: ['Firefox', 'PhantomJS']
+        browsers: ['Chrome', 'Firefox', 'PhantomJS']
       }
     },
     coveralls: {

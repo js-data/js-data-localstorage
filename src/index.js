@@ -1,18 +1,12 @@
 import JSData from 'js-data';
+import omit from 'mout/object/omit';
+import keys from 'mout/object/keys';
+import guid from 'mout/random/guid';
 
 let emptyStore = new JSData.DS();
-let DSUtils = JSData.DSUtils;
-let makePath = DSUtils.makePath;
-let deepMixIn = DSUtils.deepMixIn;
-let toJson = DSUtils.toJson;
-let fromJson = DSUtils.fromJson;
-let forEach = DSUtils.forEach;
-let removeCircular = DSUtils.removeCircular;
+let { DSUtils } = JSData;
+let { makePath, deepMixIn, toJson, fromJson, forEach, removeCircular } = DSUtils;
 let filter = emptyStore.defaults.defaultFilter;
-let omit = require('mout/object/omit');
-let guid = require('mout/random/guid');
-let keys = require('mout/object/keys');
-let P = DSUtils.Promise;
 
 class Defaults {
 
@@ -65,7 +59,7 @@ class DSLocalStorageAdapter {
   }
 
   GET(key) {
-    return new P(resolve => {
+    return new DSUtils.Promise(resolve => {
       let item = localStorage.getItem(key);
       resolve(item ? fromJson(item) : undefined);
     });
@@ -83,19 +77,19 @@ class DSLocalStorageAdapter {
   }
 
   DEL(key) {
-    return new P(function (resolve) {
+    return new DSUtils.Promise(function (resolve) {
       localStorage.removeItem(key);
       resolve();
     });
   }
 
   find(resourceConfig, id, options) {
-    return this.GET(this.getIdPath(resourceConfig, options || {}, id)).then(item => !item ? P.reject(new Error('Not Found!')) : item);
+    return this.GET(this.getIdPath(resourceConfig, options || {}, id)).then(item => !item ? DSUtils.Promise.reject(new Error('Not Found!')) : item);
   }
 
   findAll(resourceConfig, params, options) {
     let _this = this;
-    return new P(resolve => {
+    return new DSUtils.Promise(resolve => {
       options = options || {};
       if (!('allowSimpleWhere' in options)) {
         options.allowSimpleWhere = true;
@@ -139,7 +133,7 @@ class DSLocalStorageAdapter {
     return _this.findAll(resourceConfig, params, options).then(items => {
       let tasks = [];
       forEach(items, item => tasks.push(_this.update(resourceConfig, item[resourceConfig.idAttribute], omit(attrs, resourceConfig.relationFields || []), options)));
-      return P.all(tasks);
+      return DSUtils.Promise.all(tasks);
     });
   }
 
@@ -154,7 +148,7 @@ class DSLocalStorageAdapter {
     return _this.findAll(resourceConfig, params, options).then(items => {
       let tasks = [];
       forEach(items, item => tasks.push(_this.destroy(resourceConfig, item[resourceConfig.idAttribute], options)));
-      return P.all(tasks);
+      return DSUtils.Promise.all(tasks);
     });
   }
 }
