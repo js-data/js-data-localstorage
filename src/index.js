@@ -14,6 +14,38 @@ class Defaults {
 
 Defaults.prototype.basePath = '';
 
+let queue = [];
+
+function enqueue(task) {
+  queue.push(task);
+}
+
+function dequeue() {
+  if (queue.length) {
+    let task = queue.shift();
+    task();
+  }
+}
+
+function queueTask(task) {
+  if (queue.length) {
+    enqueue(task);
+  } else {
+    task();
+  }
+}
+
+function createTask(fn) {
+  return new DSUtils.Promise(fn).then(result => {
+    setTimeout(() => {
+      if (queue.length) {
+        dequeue();
+      }
+    }, 0);
+    return result;
+  });
+}
+
 class DSLocalStorageAdapter {
   constructor(options) {
     options = options || {};
@@ -84,71 +116,98 @@ class DSLocalStorageAdapter {
   }
 
   find(resourceConfig, id, options) {
-    return this.GET(this.getIdPath(resourceConfig, options || {}, id)).then(item => !item ? DSUtils.Promise.reject(new Error('Not Found!')) : item);
+    return createTask((resolve, reject) => {
+      queueTask(() => {
+        this.GET(this.getIdPath(resourceConfig, options || {}, id))
+          .then(item => !item ? reject(new Error('Not Found!')) : resolve(item));
+      });
+    });
   }
 
   findAll(resourceConfig, params, options) {
-    let _this = this;
-    return new DSUtils.Promise(resolve => {
-      options = options || {};
-      if (!('allowSimpleWhere' in options)) {
-        options.allowSimpleWhere = true;
-      }
-      let items = [];
-      let ids = keys(_this.getIds(resourceConfig, options));
-      forEach(ids, id => {
-        let itemJson = localStorage.getItem(_this.getIdPath(resourceConfig, options, id));
-        if (itemJson) {
-          items.push(fromJson(itemJson));
+    return createTask((resolve, reject) => {
+      queueTask(() => {
+        try {
+          options = options || {};
+          if (!('allowSimpleWhere' in options)) {
+            options.allowSimpleWhere = true;
+          }
+          let items = [];
+          let ids = keys(this.getIds(resourceConfig, options));
+          forEach(ids, id => {
+            let itemJson = localStorage.getItem(this.getIdPath(resourceConfig, options, id));
+            if (itemJson) {
+              items.push(fromJson(itemJson));
+            }
+          });
+          resolve(filter.call(emptyStore, items, resourceConfig.name, params, options));
+        } catch (err) {
+          reject(err);
         }
       });
-      resolve(filter.call(emptyStore, items, resourceConfig.name, params, options));
     });
   }
 
   create(resourceConfig, attrs, options) {
-    let _this = this;
-    attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid();
-    options = options || {};
-    return _this.PUT(
-      makePath(_this.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])),
-      omit(attrs, resourceConfig.relationFields || [])
-    ).then(item => {
-        _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
-        return item;
+    return createTask((resolve, reject) => {
+      queueTask(() => {
+        attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid();
+        options = options || {};
+        this.PUT(
+          makePath(this.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])),
+          omit(attrs, resourceConfig.relationFields || [])
+        ).then(item => {
+            this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
+            resolve(item);
+          }).catch(reject);
       });
+    });
   }
 
   update(resourceConfig, id, attrs, options) {
-    let _this = this;
-    options = options || {};
-    return _this.PUT(_this.getIdPath(resourceConfig, options, id), omit(attrs, resourceConfig.relationFields || [])).then(item => {
-      _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
-      return item;
+    return createTask((resolve, reject) => {
+      queueTask(() => {
+        options = options || {};
+        this.PUT(this.getIdPath(resourceConfig, options, id), omit(attrs, resourceConfig.relationFields || [])).then(item => {
+          this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
+          resolve(item);
+        }).catch(reject);
+      });
     });
   }
 
   updateAll(resourceConfig, attrs, params, options) {
-    let _this = this;
-    return _this.findAll(resourceConfig, params, options).then(items => {
-      let tasks = [];
-      forEach(items, item => tasks.push(_this.update(resourceConfig, item[resourceConfig.idAttribute], omit(attrs, resourceConfig.relationFields || []), options)));
-      return DSUtils.Promise.all(tasks);
+    return createTask((resolve, reject) => {
+      queueTask(() => {
+        this.findAll(resourceConfig, params, options).then(items => {
+          let tasks = [];
+          forEach(items, item => tasks.push(this.update(resourceConfig, item[resourceConfig.idAttribute], omit(attrs, resourceConfig.relationFields || []), options)));
+          resolve(DSUtils.Promise.all(tasks));
+        }).catch(reject);
+      });
     });
   }
 
   destroy(resourceConfig, id, options) {
-    let _this = this;
-    options = options || {};
-    return _this.DEL(_this.getIdPath(resourceConfig, options, id)).then(() => _this.removeId(id, resourceConfig.name, options));
+    return createTask((resolve, reject) => {
+      queueTask(() => {
+        options = options || {};
+        this.DEL(this.getIdPath(resourceConfig, options, id))
+          .then(() => this.removeId(id, resourceConfig.name, options))
+          .then(resolve, reject);
+      });
+    });
   }
 
   destroyAll(resourceConfig, params, options) {
-    let _this = this;
-    return _this.findAll(resourceConfig, params, options).then(items => {
-      let tasks = [];
-      forEach(items, item => tasks.push(_this.destroy(resourceConfig, item[resourceConfig.idAttribute], options)));
-      return DSUtils.Promise.all(tasks);
+    return createTask((resolve, reject) => {
+      queueTask(() => {
+        this.findAll(resourceConfig, params, options).then(items => {
+          let tasks = [];
+          forEach(items, item => tasks.push(this.destroy(resourceConfig, item[resourceConfig.idAttribute], options)));
+          resolve(DSUtils.Promise.all(tasks));
+        }).catch(reject);
+      });
     });
   }
 }

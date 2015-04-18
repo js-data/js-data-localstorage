@@ -106,6 +106,38 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	Defaults.prototype.basePath = '';
 
+	var queue = [];
+
+	function enqueue(task) {
+	  queue.push(task);
+	}
+
+	function dequeue() {
+	  if (queue.length) {
+	    var task = queue.shift();
+	    task();
+	  }
+	}
+
+	function queueTask(task) {
+	  if (queue.length) {
+	    enqueue(task);
+	  } else {
+	    task();
+	  }
+	}
+
+	function createTask(fn) {
+	  return new DSUtils.Promise(fn).then(function (result) {
+	    setTimeout(function () {
+	      if (queue.length) {
+	        dequeue();
+	      }
+	    }, 0);
+	    return result;
+	  });
+	}
+
 	var DSLocalStorageAdapter = (function () {
 	  function DSLocalStorageAdapter(options) {
 	    _classCallCheck(this, DSLocalStorageAdapter);
@@ -189,82 +221,122 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'find',
 	    value: function find(resourceConfig, id, options) {
-	      return this.GET(this.getIdPath(resourceConfig, options || {}, id)).then(function (item) {
-	        return !item ? DSUtils.Promise.reject(new Error('Not Found!')) : item;
+	      var _this = this;
+
+	      return createTask(function (resolve, reject) {
+	        queueTask(function () {
+	          _this.GET(_this.getIdPath(resourceConfig, options || {}, id)).then(function (item) {
+	            return !item ? reject(new Error('Not Found!')) : resolve(item);
+	          });
+	        });
 	      });
 	    }
 	  }, {
 	    key: 'findAll',
 	    value: function findAll(resourceConfig, params, options) {
-	      var _this = this;
-	      return new DSUtils.Promise(function (resolve) {
-	        options = options || {};
-	        if (!('allowSimpleWhere' in options)) {
-	          options.allowSimpleWhere = true;
-	        }
-	        var items = [];
-	        var ids = _keys2['default'](_this.getIds(resourceConfig, options));
-	        forEach(ids, function (id) {
-	          var itemJson = localStorage.getItem(_this.getIdPath(resourceConfig, options, id));
-	          if (itemJson) {
-	            items.push(fromJson(itemJson));
+	      var _this2 = this;
+
+	      return createTask(function (resolve, reject) {
+	        queueTask(function () {
+	          try {
+	            (function () {
+	              options = options || {};
+	              if (!('allowSimpleWhere' in options)) {
+	                options.allowSimpleWhere = true;
+	              }
+	              var items = [];
+	              var ids = _keys2['default'](_this2.getIds(resourceConfig, options));
+	              forEach(ids, function (id) {
+	                var itemJson = localStorage.getItem(_this2.getIdPath(resourceConfig, options, id));
+	                if (itemJson) {
+	                  items.push(fromJson(itemJson));
+	                }
+	              });
+	              resolve(filter.call(emptyStore, items, resourceConfig.name, params, options));
+	            })();
+	          } catch (err) {
+	            reject(err);
 	          }
 	        });
-	        resolve(filter.call(emptyStore, items, resourceConfig.name, params, options));
 	      });
 	    }
 	  }, {
 	    key: 'create',
 	    value: function create(resourceConfig, attrs, options) {
-	      var _this = this;
-	      attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || _guid2['default']();
-	      options = options || {};
-	      return _this.PUT(makePath(_this.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])), _omit2['default'](attrs, resourceConfig.relationFields || [])).then(function (item) {
-	        _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
-	        return item;
+	      var _this3 = this;
+
+	      return createTask(function (resolve, reject) {
+	        queueTask(function () {
+	          attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || _guid2['default']();
+	          options = options || {};
+	          _this3.PUT(makePath(_this3.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])), _omit2['default'](attrs, resourceConfig.relationFields || [])).then(function (item) {
+	            _this3.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
+	            resolve(item);
+	          })['catch'](reject);
+	        });
 	      });
 	    }
 	  }, {
 	    key: 'update',
 	    value: function update(resourceConfig, id, attrs, options) {
-	      var _this = this;
-	      options = options || {};
-	      return _this.PUT(_this.getIdPath(resourceConfig, options, id), _omit2['default'](attrs, resourceConfig.relationFields || [])).then(function (item) {
-	        _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
-	        return item;
+	      var _this4 = this;
+
+	      return createTask(function (resolve, reject) {
+	        queueTask(function () {
+	          options = options || {};
+	          _this4.PUT(_this4.getIdPath(resourceConfig, options, id), _omit2['default'](attrs, resourceConfig.relationFields || [])).then(function (item) {
+	            _this4.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
+	            resolve(item);
+	          })['catch'](reject);
+	        });
 	      });
 	    }
 	  }, {
 	    key: 'updateAll',
 	    value: function updateAll(resourceConfig, attrs, params, options) {
-	      var _this = this;
-	      return _this.findAll(resourceConfig, params, options).then(function (items) {
-	        var tasks = [];
-	        forEach(items, function (item) {
-	          return tasks.push(_this.update(resourceConfig, item[resourceConfig.idAttribute], _omit2['default'](attrs, resourceConfig.relationFields || []), options));
+	      var _this5 = this;
+
+	      return createTask(function (resolve, reject) {
+	        queueTask(function () {
+	          _this5.findAll(resourceConfig, params, options).then(function (items) {
+	            var tasks = [];
+	            forEach(items, function (item) {
+	              return tasks.push(_this5.update(resourceConfig, item[resourceConfig.idAttribute], _omit2['default'](attrs, resourceConfig.relationFields || []), options));
+	            });
+	            resolve(DSUtils.Promise.all(tasks));
+	          })['catch'](reject);
 	        });
-	        return DSUtils.Promise.all(tasks);
 	      });
 	    }
 	  }, {
 	    key: 'destroy',
 	    value: function destroy(resourceConfig, id, options) {
-	      var _this = this;
-	      options = options || {};
-	      return _this.DEL(_this.getIdPath(resourceConfig, options, id)).then(function () {
-	        return _this.removeId(id, resourceConfig.name, options);
+	      var _this6 = this;
+
+	      return createTask(function (resolve, reject) {
+	        queueTask(function () {
+	          options = options || {};
+	          _this6.DEL(_this6.getIdPath(resourceConfig, options, id)).then(function () {
+	            return _this6.removeId(id, resourceConfig.name, options);
+	          }).then(resolve, reject);
+	        });
 	      });
 	    }
 	  }, {
 	    key: 'destroyAll',
 	    value: function destroyAll(resourceConfig, params, options) {
-	      var _this = this;
-	      return _this.findAll(resourceConfig, params, options).then(function (items) {
-	        var tasks = [];
-	        forEach(items, function (item) {
-	          return tasks.push(_this.destroy(resourceConfig, item[resourceConfig.idAttribute], options));
+	      var _this7 = this;
+
+	      return createTask(function (resolve, reject) {
+	        queueTask(function () {
+	          _this7.findAll(resourceConfig, params, options).then(function (items) {
+	            var tasks = [];
+	            forEach(items, function (item) {
+	              return tasks.push(_this7.destroy(resourceConfig, item[resourceConfig.idAttribute], options));
+	            });
+	            resolve(DSUtils.Promise.all(tasks));
+	          })['catch'](reject);
 	        });
-	        return DSUtils.Promise.all(tasks);
 	      });
 	    }
 	  }]);
@@ -312,7 +384,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var forOwn = __webpack_require__(9);
+	var forOwn = __webpack_require__(7);
 
 	    /**
 	     * Get object keys
@@ -334,8 +406,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var randHex = __webpack_require__(7);
-	var choice = __webpack_require__(8);
+	var randHex = __webpack_require__(8);
+	var choice = __webpack_require__(9);
 
 	  /**
 	   * Returns pseudo-random guid (UUID v4)
@@ -421,7 +493,32 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var choice = __webpack_require__(8);
+	var hasOwn = __webpack_require__(11);
+	var forIn = __webpack_require__(12);
+
+	    /**
+	     * Similar to Array/forEach but works over object properties and fixes Don't
+	     * Enum bug on IE.
+	     * based on: http://whattheheadsaid.com/2010/10/a-safer-object-keys-compatibility-implementation
+	     */
+	    function forOwn(obj, fn, thisObj){
+	        forIn(obj, function(val, key){
+	            if (hasOwn(obj, key)) {
+	                return fn.call(thisObj, obj[key], key, obj);
+	            }
+	        });
+	    }
+
+	    module.exports = forOwn;
+
+
+
+
+/***/ },
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var choice = __webpack_require__(9);
 
 	    var _chars = '0123456789abcdef'.split('');
 
@@ -443,11 +540,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var randInt = __webpack_require__(11);
-	var isArray = __webpack_require__(12);
+	var randInt = __webpack_require__(13);
+	var isArray = __webpack_require__(14);
 
 	    /**
 	     * Returns a random element from the supplied arguments
@@ -459,31 +556,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    module.exports = choice;
-
-
-
-
-/***/ },
-/* 9 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var hasOwn = __webpack_require__(13);
-	var forIn = __webpack_require__(14);
-
-	    /**
-	     * Similar to Array/forEach but works over object properties and fixes Don't
-	     * Enum bug on IE.
-	     * based on: http://whattheheadsaid.com/2010/10/a-safer-object-keys-compatibility-implementation
-	     */
-	    function forOwn(obj, fn, thisObj){
-	        forIn(obj, function(val, key){
-	            if (hasOwn(obj, key)) {
-	                return fn.call(thisObj, obj[key], key, obj);
-	            }
-	        });
-	    }
-
-	    module.exports = forOwn;
 
 
 
@@ -526,44 +598,6 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var MIN_INT = __webpack_require__(16);
-	var MAX_INT = __webpack_require__(15);
-	var rand = __webpack_require__(17);
-
-	    /**
-	     * Gets random integer inside range or snap to min/max values.
-	     */
-	    function randInt(min, max){
-	        min = min == null? MIN_INT : ~~min;
-	        max = max == null? MAX_INT : ~~max;
-	        // can't be max + 0.5 otherwise it will round up if `rand`
-	        // returns `max` causing it to overflow range.
-	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
-	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
-	    }
-
-	    module.exports = randInt;
-
-
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var isKind = __webpack_require__(18);
-	    /**
-	     */
-	    var isArray = Array.isArray || function (val) {
-	        return isKind(val, 'Array');
-	    };
-	    module.exports = isArray;
-
-
-
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
 	
 
 	    /**
@@ -579,10 +613,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 14 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var hasOwn = __webpack_require__(13);
+	var hasOwn = __webpack_require__(11);
 
 	    var _hasDontEnumBug,
 	        _dontEnums;
@@ -661,19 +695,45 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 15 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/**
-	 * @constant Maximum 32-bit signed integer value. (2^31 - 1)
-	 */
+	var MIN_INT = __webpack_require__(15);
+	var MAX_INT = __webpack_require__(16);
+	var rand = __webpack_require__(17);
 
-	    module.exports = 2147483647;
+	    /**
+	     * Gets random integer inside range or snap to min/max values.
+	     */
+	    function randInt(min, max){
+	        min = min == null? MIN_INT : ~~min;
+	        max = max == null? MAX_INT : ~~max;
+	        // can't be max + 0.5 otherwise it will round up if `rand`
+	        // returns `max` causing it to overflow range.
+	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
+	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
+	    }
+
+	    module.exports = randInt;
 
 
 
 /***/ },
-/* 16 */
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var isKind = __webpack_require__(18);
+	    /**
+	     */
+	    var isArray = Array.isArray || function (val) {
+	        return isKind(val, 'Array');
+	    };
+	    module.exports = isArray;
+
+
+
+/***/ },
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -685,12 +745,24 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
+/* 16 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * @constant Maximum 32-bit signed integer value. (2^31 - 1)
+	 */
+
+	    module.exports = 2147483647;
+
+
+
+/***/ },
 /* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var random = __webpack_require__(19);
-	var MIN_INT = __webpack_require__(16);
-	var MAX_INT = __webpack_require__(15);
+	var MIN_INT = __webpack_require__(15);
+	var MAX_INT = __webpack_require__(16);
 
 	    /**
 	     * Returns random number inside range

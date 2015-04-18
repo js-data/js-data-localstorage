@@ -1,3 +1,8 @@
+##### 2.0.0-beta.2 - 18 April 2015
+
+###### Backwards compatible bug fixes
+- #9 - Race condition, tasks need to be atomic
+
 ##### 2.0.0-beta.1 - 17 April 2015
 
 Prepare for 2.0.
