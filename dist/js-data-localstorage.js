@@ -1,6 +1,6 @@
 /*!
  * js-data-localstorage
- * @version 2.0.0-beta.1 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
+ * @version 2.0.0-beta.2 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
  * @author Jason Dobry <jason.dobry@gmail.com>
  * @copyright (c) 2014-2015 Jason Dobry 
  * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
@@ -312,7 +312,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var forOwn = __webpack_require__(7);
+	var forOwn = __webpack_require__(9);
 
 	    /**
 	     * Get object keys
@@ -334,8 +334,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var randHex = __webpack_require__(8);
-	var choice = __webpack_require__(9);
+	var randHex = __webpack_require__(7);
+	var choice = __webpack_require__(8);
 
 	  /**
 	   * Returns pseudo-random guid (UUID v4)
@@ -421,32 +421,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var hasOwn = __webpack_require__(11);
-	var forIn = __webpack_require__(12);
-
-	    /**
-	     * Similar to Array/forEach but works over object properties and fixes Don't
-	     * Enum bug on IE.
-	     * based on: http://whattheheadsaid.com/2010/10/a-safer-object-keys-compatibility-implementation
-	     */
-	    function forOwn(obj, fn, thisObj){
-	        forIn(obj, function(val, key){
-	            if (hasOwn(obj, key)) {
-	                return fn.call(thisObj, obj[key], key, obj);
-	            }
-	        });
-	    }
-
-	    module.exports = forOwn;
-
-
-
-
-/***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var choice = __webpack_require__(9);
+	var choice = __webpack_require__(8);
 
 	    var _chars = '0123456789abcdef'.split('');
 
@@ -468,11 +443,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 9 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var randInt = __webpack_require__(13);
-	var isArray = __webpack_require__(14);
+	var randInt = __webpack_require__(11);
+	var isArray = __webpack_require__(12);
 
 	    /**
 	     * Returns a random element from the supplied arguments
@@ -484,6 +459,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    module.exports = choice;
+
+
+
+
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var hasOwn = __webpack_require__(13);
+	var forIn = __webpack_require__(14);
+
+	    /**
+	     * Similar to Array/forEach but works over object properties and fixes Don't
+	     * Enum bug on IE.
+	     * based on: http://whattheheadsaid.com/2010/10/a-safer-object-keys-compatibility-implementation
+	     */
+	    function forOwn(obj, fn, thisObj){
+	        forIn(obj, function(val, key){
+	            if (hasOwn(obj, key)) {
+	                return fn.call(thisObj, obj[key], key, obj);
+	            }
+	        });
+	    }
+
+	    module.exports = forOwn;
 
 
 
@@ -526,6 +526,44 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var MIN_INT = __webpack_require__(16);
+	var MAX_INT = __webpack_require__(15);
+	var rand = __webpack_require__(17);
+
+	    /**
+	     * Gets random integer inside range or snap to min/max values.
+	     */
+	    function randInt(min, max){
+	        min = min == null? MIN_INT : ~~min;
+	        max = max == null? MAX_INT : ~~max;
+	        // can't be max + 0.5 otherwise it will round up if `rand`
+	        // returns `max` causing it to overflow range.
+	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
+	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
+	    }
+
+	    module.exports = randInt;
+
+
+
+/***/ },
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var isKind = __webpack_require__(18);
+	    /**
+	     */
+	    var isArray = Array.isArray || function (val) {
+	        return isKind(val, 'Array');
+	    };
+	    module.exports = isArray;
+
+
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
 	
 
 	    /**
@@ -541,10 +579,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 12 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var hasOwn = __webpack_require__(11);
+	var hasOwn = __webpack_require__(13);
 
 	    var _hasDontEnumBug,
 	        _dontEnums;
@@ -623,57 +661,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var MIN_INT = __webpack_require__(15);
-	var MAX_INT = __webpack_require__(16);
-	var rand = __webpack_require__(17);
-
-	    /**
-	     * Gets random integer inside range or snap to min/max values.
-	     */
-	    function randInt(min, max){
-	        min = min == null? MIN_INT : ~~min;
-	        max = max == null? MAX_INT : ~~max;
-	        // can't be max + 0.5 otherwise it will round up if `rand`
-	        // returns `max` causing it to overflow range.
-	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
-	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
-	    }
-
-	    module.exports = randInt;
-
-
-
-/***/ },
-/* 14 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var isKind = __webpack_require__(18);
-	    /**
-	     */
-	    var isArray = Array.isArray || function (val) {
-	        return isKind(val, 'Array');
-	    };
-	    module.exports = isArray;
-
-
-
-/***/ },
 /* 15 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * @constant Minimum 32-bit signed integer value (-2^31).
-	 */
-
-	    module.exports = -2147483648;
-
-
-
-/***/ },
-/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -685,12 +673,24 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
+/* 16 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * @constant Minimum 32-bit signed integer value (-2^31).
+	 */
+
+	    module.exports = -2147483648;
+
+
+
+/***/ },
 /* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var random = __webpack_require__(19);
-	var MIN_INT = __webpack_require__(15);
-	var MAX_INT = __webpack_require__(16);
+	var MIN_INT = __webpack_require__(16);
+	var MAX_INT = __webpack_require__(15);
 
 	    /**
 	     * Returns random number inside range
