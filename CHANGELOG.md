@@ -1,3 +1,7 @@
+##### 2.0.0-beta.4 - 18 April 2015
+
+Fix
+
 ##### 2.0.0-beta.3 - 18 April 2015
 
 ###### Backwards compatible bug fixes

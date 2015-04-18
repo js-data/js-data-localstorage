@@ -15,34 +15,39 @@ class Defaults {
 Defaults.prototype.basePath = '';
 
 let queue = [];
+let taskInProcess = false;
 
 function enqueue(task) {
   queue.push(task);
 }
 
 function dequeue() {
-  if (queue.length) {
-    let task = queue.shift();
-    task();
+  if (queue.length && !taskInProcess) {
+    taskInProcess = true;
+    queue[0]();
   }
 }
 
 function queueTask(task) {
-  if (queue.length) {
+  if (!queue.length) {
     enqueue(task);
+    dequeue();
   } else {
-    task();
+    enqueue(task);
   }
 }
 
 function createTask(fn) {
   return new DSUtils.Promise(fn).then(result => {
-    setTimeout(() => {
-      if (queue.length) {
-        dequeue();
-      }
-    }, 0);
+    taskInProcess = false;
+    queue.shift();
+    setTimeout(dequeue, 0);
     return result;
+  }, err => {
+    taskInProcess = false;
+    queue.shift();
+    setTimeout(dequeue, 0);
+    return DSUtils.Promise.reject(err);
   });
 }
 
@@ -119,7 +124,7 @@ class DSLocalStorageAdapter {
     return createTask((resolve, reject) => {
       queueTask(() => {
         this.GET(this.getIdPath(resourceConfig, options || {}, id))
-          .then(item => !item ? reject(new Error('Not Found!')) : resolve(item));
+          .then(item => !item ? reject(new Error('Not Found!')) : resolve(item), reject);
       });
     });
   }
@@ -177,14 +182,10 @@ class DSLocalStorageAdapter {
   }
 
   updateAll(resourceConfig, attrs, params, options) {
-    return createTask((resolve, reject) => {
-      queueTask(() => {
-        this.findAll(resourceConfig, params, options).then(items => {
-          let tasks = [];
-          forEach(items, item => tasks.push(this.update(resourceConfig, item[resourceConfig.idAttribute], omit(attrs, resourceConfig.relationFields || []), options)));
-          resolve(DSUtils.Promise.all(tasks));
-        }).catch(reject);
-      });
+    return this.findAll(resourceConfig, params, options).then(items => {
+      let tasks = [];
+      forEach(items, item => tasks.push(this.update(resourceConfig, item[resourceConfig.idAttribute], omit(attrs, resourceConfig.relationFields || []), options)));
+      return DSUtils.Promise.all(tasks);
     });
   }
 
@@ -194,20 +195,16 @@ class DSLocalStorageAdapter {
         options = options || {};
         this.DEL(this.getIdPath(resourceConfig, options, id))
           .then(() => this.removeId(id, resourceConfig.name, options))
-          .then(resolve, reject);
+          .then(() => resolve(null), reject);
       });
     });
   }
 
   destroyAll(resourceConfig, params, options) {
-    return createTask((resolve, reject) => {
-      queueTask(() => {
-        this.findAll(resourceConfig, params, options).then(items => {
-          let tasks = [];
-          forEach(items, item => tasks.push(this.destroy(resourceConfig, item[resourceConfig.idAttribute], options)));
-          resolve(DSUtils.Promise.all(tasks));
-        }).catch(reject);
-      });
+    return this.findAll(resourceConfig, params, options).then(items => {
+      let tasks = [];
+      forEach(items, item => tasks.push(this.destroy(resourceConfig, item[resourceConfig.idAttribute], options)));
+      return DSUtils.Promise.all(tasks);
     });
   }
 }

@@ -1,6 +1,6 @@
 /*!
  * js-data-localstorage
- * @version 2.0.0-beta.3 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
+ * @version 2.0.0-beta.4 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
  * @author Jason Dobry <jason.dobry@gmail.com>
  * @copyright (c) 2014-2015 Jason Dobry 
  * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
@@ -107,34 +107,39 @@ return /******/ (function(modules) { // webpackBootstrap
 	Defaults.prototype.basePath = '';
 
 	var queue = [];
+	var taskInProcess = false;
 
 	function enqueue(task) {
 	  queue.push(task);
 	}
 
 	function dequeue() {
-	  if (queue.length) {
-	    var task = queue.shift();
-	    task();
+	  if (queue.length && !taskInProcess) {
+	    taskInProcess = true;
+	    queue[0]();
 	  }
 	}
 
 	function queueTask(task) {
-	  if (queue.length) {
+	  if (!queue.length) {
 	    enqueue(task);
+	    dequeue();
 	  } else {
-	    task();
+	    enqueue(task);
 	  }
 	}
 
 	function createTask(fn) {
 	  return new DSUtils.Promise(fn).then(function (result) {
-	    setTimeout(function () {
-	      if (queue.length) {
-	        dequeue();
-	      }
-	    }, 0);
+	    taskInProcess = false;
+	    queue.shift();
+	    setTimeout(dequeue, 0);
 	    return result;
+	  }, function (err) {
+	    taskInProcess = false;
+	    queue.shift();
+	    setTimeout(dequeue, 0);
+	    return DSUtils.Promise.reject(err);
 	  });
 	}
 
@@ -227,7 +232,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        queueTask(function () {
 	          _this.GET(_this.getIdPath(resourceConfig, options || {}, id)).then(function (item) {
 	            return !item ? reject(new Error('Not Found!')) : resolve(item);
-	          });
+	          }, reject);
 	        });
 	      });
 	    }
@@ -296,16 +301,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function updateAll(resourceConfig, attrs, params, options) {
 	      var _this5 = this;
 
-	      return createTask(function (resolve, reject) {
-	        queueTask(function () {
-	          _this5.findAll(resourceConfig, params, options).then(function (items) {
-	            var tasks = [];
-	            forEach(items, function (item) {
-	              return tasks.push(_this5.update(resourceConfig, item[resourceConfig.idAttribute], _omit2['default'](attrs, resourceConfig.relationFields || []), options));
-	            });
-	            resolve(DSUtils.Promise.all(tasks));
-	          })['catch'](reject);
+	      return this.findAll(resourceConfig, params, options).then(function (items) {
+	        var tasks = [];
+	        forEach(items, function (item) {
+	          return tasks.push(_this5.update(resourceConfig, item[resourceConfig.idAttribute], _omit2['default'](attrs, resourceConfig.relationFields || []), options));
 	        });
+	        return DSUtils.Promise.all(tasks);
 	      });
 	    }
 	  }, {
@@ -318,7 +319,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	          options = options || {};
 	          _this6.DEL(_this6.getIdPath(resourceConfig, options, id)).then(function () {
 	            return _this6.removeId(id, resourceConfig.name, options);
-	          }).then(resolve, reject);
+	          }).then(function () {
+	            return resolve(null);
+	          }, reject);
 	        });
 	      });
 	    }
@@ -327,16 +330,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function destroyAll(resourceConfig, params, options) {
 	      var _this7 = this;
 
-	      return createTask(function (resolve, reject) {
-	        queueTask(function () {
-	          _this7.findAll(resourceConfig, params, options).then(function (items) {
-	            var tasks = [];
-	            forEach(items, function (item) {
-	              return tasks.push(_this7.destroy(resourceConfig, item[resourceConfig.idAttribute], options));
-	            });
-	            resolve(DSUtils.Promise.all(tasks));
-	          })['catch'](reject);
+	      return this.findAll(resourceConfig, params, options).then(function (items) {
+	        var tasks = [];
+	        forEach(items, function (item) {
+	          return tasks.push(_this7.destroy(resourceConfig, item[resourceConfig.idAttribute], options));
 	        });
+	        return DSUtils.Promise.all(tasks);
 	      });
 	    }
 	  }]);
