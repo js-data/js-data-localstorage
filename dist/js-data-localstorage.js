@@ -1,6 +1,6 @@
 /*!
  * js-data-localstorage
- * @version 2.0.0-beta.4 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
+ * @version 2.0.0-rc.1 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
  * @author Jason Dobry <jason.dobry@gmail.com>
  * @copyright (c) 2014-2015 Jason Dobry 
  * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
@@ -63,34 +63,17 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { 'default': obj }; };
-
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 	var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } };
 
-	Object.defineProperty(exports, '__esModule', {
-	  value: true
-	});
+	var JSData = __webpack_require__(1);
+	var keys = __webpack_require__(2);
+	var guid = __webpack_require__(3);
 
-	var _JSData = __webpack_require__(1);
-
-	var _JSData2 = _interopRequireWildcard(_JSData);
-
-	var _omit = __webpack_require__(2);
-
-	var _omit2 = _interopRequireWildcard(_omit);
-
-	var _keys = __webpack_require__(3);
-
-	var _keys2 = _interopRequireWildcard(_keys);
-
-	var _guid = __webpack_require__(4);
-
-	var _guid2 = _interopRequireWildcard(_guid);
-
-	var emptyStore = new _JSData2['default'].DS();
-	var DSUtils = _JSData2['default'].DSUtils;
+	var emptyStore = new JSData.DS();
+	var DSUtils = JSData.DSUtils;
+	var omit = DSUtils.omit;
 	var makePath = DSUtils.makePath;
 	var deepMixIn = DSUtils.deepMixIn;
 	var toJson = DSUtils.toJson;
@@ -160,7 +143,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'getIdPath',
 	    value: function getIdPath(resourceConfig, options, id) {
-	      return makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.getEndpoint(id, options), id);
+	      return makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.endpoint, id);
 	    }
 	  }, {
 	    key: 'getIds',
@@ -250,7 +233,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                options.allowSimpleWhere = true;
 	              }
 	              var items = [];
-	              var ids = _keys2['default'](_this2.getIds(resourceConfig, options));
+	              var ids = keys(_this2.getIds(resourceConfig, options));
 	              forEach(ids, function (id) {
 	                var itemJson = localStorage.getItem(_this2.getIdPath(resourceConfig, options, id));
 	                if (itemJson) {
@@ -272,9 +255,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      return createTask(function (resolve, reject) {
 	        queueTask(function () {
-	          attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || _guid2['default']();
+	          attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid();
 	          options = options || {};
-	          _this3.PUT(makePath(_this3.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])), _omit2['default'](attrs, resourceConfig.relationFields || [])).then(function (item) {
+	          _this3.PUT(makePath(_this3.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])), omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
 	            _this3.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
 	            resolve(item);
 	          })['catch'](reject);
@@ -289,7 +272,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return createTask(function (resolve, reject) {
 	        queueTask(function () {
 	          options = options || {};
-	          _this4.PUT(_this4.getIdPath(resourceConfig, options, id), _omit2['default'](attrs, resourceConfig.relationFields || [])).then(function (item) {
+	          _this4.PUT(_this4.getIdPath(resourceConfig, options, id), omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
 	            _this4.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
 	            resolve(item);
 	          })['catch'](reject);
@@ -304,7 +287,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return this.findAll(resourceConfig, params, options).then(function (items) {
 	        var tasks = [];
 	        forEach(items, function (item) {
-	          return tasks.push(_this5.update(resourceConfig, item[resourceConfig.idAttribute], _omit2['default'](attrs, resourceConfig.relationFields || []), options));
+	          return tasks.push(_this5.update(resourceConfig, item[resourceConfig.idAttribute], omit(attrs, resourceConfig.relationFields || []), options));
 	        });
 	        return DSUtils.Promise.all(tasks);
 	      });
@@ -343,8 +326,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return DSLocalStorageAdapter;
 	})();
 
-	exports['default'] = DSLocalStorageAdapter;
-	module.exports = exports['default'];
+	module.exports = DSLocalStorageAdapter;
 
 /***/ },
 /* 1 */
@@ -356,34 +338,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var slice = __webpack_require__(5);
-	var contains = __webpack_require__(6);
-
-	    /**
-	     * Return a copy of the object, filtered to only contain properties except the blacklisted keys.
-	     */
-	    function omit(obj, var_keys){
-	        var keys = typeof arguments[1] !== 'string'? arguments[1] : slice(arguments, 1),
-	            out = {};
-
-	        for (var property in obj) {
-	            if (obj.hasOwnProperty(property) && !contains(keys, property)) {
-	                out[property] = obj[property];
-	            }
-	        }
-	        return out;
-	    }
-
-	    module.exports = omit;
-
-
-
-
-/***/ },
-/* 3 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var forOwn = __webpack_require__(7);
+	var forOwn = __webpack_require__(4);
 
 	    /**
 	     * Get object keys
@@ -402,11 +357,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 4 */
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var randHex = __webpack_require__(8);
-	var choice = __webpack_require__(9);
+	var randHex = __webpack_require__(5);
+	var choice = __webpack_require__(6);
 
 	  /**
 	   * Returns pseudo-random guid (UUID v4)
@@ -432,68 +387,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 5 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
-
-	    /**
-	     * Create slice of source array or array-like object
-	     */
-	    function slice(arr, start, end){
-	        var len = arr.length;
-
-	        if (start == null) {
-	            start = 0;
-	        } else if (start < 0) {
-	            start = Math.max(len + start, 0);
-	        } else {
-	            start = Math.min(start, len);
-	        }
-
-	        if (end == null) {
-	            end = len;
-	        } else if (end < 0) {
-	            end = Math.max(len + end, 0);
-	        } else {
-	            end = Math.min(end, len);
-	        }
-
-	        var result = [];
-	        while (start < end) {
-	            result.push(arr[start++]);
-	        }
-
-	        return result;
-	    }
-
-	    module.exports = slice;
-
-
-
-
-/***/ },
-/* 6 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var indexOf = __webpack_require__(10);
-
-	    /**
-	     * If array contains values.
-	     */
-	    function contains(arr, val) {
-	        return indexOf(arr, val) !== -1;
-	    }
-	    module.exports = contains;
-
-
-
-/***/ },
-/* 7 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var hasOwn = __webpack_require__(11);
-	var forIn = __webpack_require__(12);
+	var hasOwn = __webpack_require__(9);
+	var forIn = __webpack_require__(10);
 
 	    /**
 	     * Similar to Array/forEach but works over object properties and fixes Don't
@@ -514,10 +412,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 8 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var choice = __webpack_require__(9);
+	var choice = __webpack_require__(6);
 
 	    var _chars = '0123456789abcdef'.split('');
 
@@ -539,11 +437,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 9 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var randInt = __webpack_require__(13);
-	var isArray = __webpack_require__(14);
+	var randInt = __webpack_require__(7);
+	var isArray = __webpack_require__(8);
 
 	    /**
 	     * Returns a random element from the supplied arguments
@@ -560,41 +458,45 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 10 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
+	var MIN_INT = __webpack_require__(11);
+	var MAX_INT = __webpack_require__(12);
+	var rand = __webpack_require__(13);
 
 	    /**
-	     * Array.indexOf
+	     * Gets random integer inside range or snap to min/max values.
 	     */
-	    function indexOf(arr, item, fromIndex) {
-	        fromIndex = fromIndex || 0;
-	        if (arr == null) {
-	            return -1;
-	        }
-
-	        var len = arr.length,
-	            i = fromIndex < 0 ? len + fromIndex : fromIndex;
-	        while (i < len) {
-	            // we iterate over sparse items since there is no way to make it
-	            // work properly on IE 7-8. see #64
-	            if (arr[i] === item) {
-	                return i;
-	            }
-
-	            i++;
-	        }
-
-	        return -1;
+	    function randInt(min, max){
+	        min = min == null? MIN_INT : ~~min;
+	        max = max == null? MAX_INT : ~~max;
+	        // can't be max + 0.5 otherwise it will round up if `rand`
+	        // returns `max` causing it to overflow range.
+	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
+	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
 	    }
 
-	    module.exports = indexOf;
+	    module.exports = randInt;
 
 
 
 /***/ },
-/* 11 */
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var isKind = __webpack_require__(14);
+	    /**
+	     */
+	    var isArray = Array.isArray || function (val) {
+	        return isKind(val, 'Array');
+	    };
+	    module.exports = isArray;
+
+
+
+/***/ },
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -612,10 +514,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 12 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var hasOwn = __webpack_require__(11);
+	var hasOwn = __webpack_require__(9);
 
 	    var _hasDontEnumBug,
 	        _dontEnums;
@@ -694,45 +596,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var MIN_INT = __webpack_require__(15);
-	var MAX_INT = __webpack_require__(16);
-	var rand = __webpack_require__(17);
-
-	    /**
-	     * Gets random integer inside range or snap to min/max values.
-	     */
-	    function randInt(min, max){
-	        min = min == null? MIN_INT : ~~min;
-	        max = max == null? MAX_INT : ~~max;
-	        // can't be max + 0.5 otherwise it will round up if `rand`
-	        // returns `max` causing it to overflow range.
-	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
-	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
-	    }
-
-	    module.exports = randInt;
-
-
-
-/***/ },
-/* 14 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var isKind = __webpack_require__(18);
-	    /**
-	     */
-	    var isArray = Array.isArray || function (val) {
-	        return isKind(val, 'Array');
-	    };
-	    module.exports = isArray;
-
-
-
-/***/ },
-/* 15 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -744,7 +608,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 16 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -756,12 +620,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 17 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var random = __webpack_require__(19);
-	var MIN_INT = __webpack_require__(15);
-	var MAX_INT = __webpack_require__(16);
+	var random = __webpack_require__(15);
+	var MIN_INT = __webpack_require__(11);
+	var MAX_INT = __webpack_require__(12);
 
 	    /**
 	     * Returns random number inside range
@@ -777,10 +641,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 18 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var kindOf = __webpack_require__(20);
+	var kindOf = __webpack_require__(16);
 	    /**
 	     * Check if value is from a specific "kind".
 	     */
@@ -792,7 +656,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 19 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -816,7 +680,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 20 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	

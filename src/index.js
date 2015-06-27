@@ -1,11 +1,10 @@
-import JSData from 'js-data';
-import omit from 'mout/object/omit';
-import keys from 'mout/object/keys';
-import guid from 'mout/random/guid';
+let JSData = require('js-data');
+let keys = require('mout/object/keys');
+let guid = require('mout/random/guid');
 
 let emptyStore = new JSData.DS();
 let { DSUtils } = JSData;
-let { makePath, deepMixIn, toJson, fromJson, forEach, removeCircular } = DSUtils;
+let { omit, makePath, deepMixIn, toJson, fromJson, forEach, removeCircular } = DSUtils;
 let filter = emptyStore.defaults.defaultFilter;
 
 class Defaults {
@@ -63,7 +62,7 @@ class DSLocalStorageAdapter {
   }
 
   getIdPath(resourceConfig, options, id) {
-    return makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.getEndpoint(id, options), id);
+    return makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.endpoint, id);
   }
 
   getIds(resourceConfig, options) {
@@ -209,4 +208,4 @@ class DSLocalStorageAdapter {
   }
 }
 
-export default DSLocalStorageAdapter;
+module.exports = DSLocalStorageAdapter;

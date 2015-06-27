@@ -1,3 +1,7 @@
+##### 2.0.0-rc.1 - xx June 2015
+
+Removed use of `getEndpoint()`, now just using `endpoint`
+
 ##### 2.0.0-beta.4 - 18 April 2015
 
 Fix
