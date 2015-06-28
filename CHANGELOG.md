@@ -1,6 +1,7 @@
-##### 2.0.0-rc.1 - xx June 2015
+##### 2.0.0-rc.1 - 27 June 2015
 
-Removed use of `getEndpoint()`, now just using `endpoint`
+###### Breaking API changes
+- Removed use of `getEndpoint()`, now just using `endpoint`. Data will now potentially be stored under different keys than before.
 
 ##### 2.0.0-beta.4 - 18 April 2015
 

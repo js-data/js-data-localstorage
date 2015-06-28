@@ -65,7 +65,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-	var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } };
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 	var JSData = __webpack_require__(1);
 	var keys = __webpack_require__(2);
@@ -390,8 +390,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var hasOwn = __webpack_require__(9);
-	var forIn = __webpack_require__(10);
+	var hasOwn = __webpack_require__(7);
+	var forIn = __webpack_require__(8);
 
 	    /**
 	     * Similar to Array/forEach but works over object properties and fixes Don't
@@ -440,8 +440,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var randInt = __webpack_require__(7);
-	var isArray = __webpack_require__(8);
+	var randInt = __webpack_require__(9);
+	var isArray = __webpack_require__(10);
 
 	    /**
 	     * Returns a random element from the supplied arguments
@@ -461,44 +461,6 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var MIN_INT = __webpack_require__(11);
-	var MAX_INT = __webpack_require__(12);
-	var rand = __webpack_require__(13);
-
-	    /**
-	     * Gets random integer inside range or snap to min/max values.
-	     */
-	    function randInt(min, max){
-	        min = min == null? MIN_INT : ~~min;
-	        max = max == null? MAX_INT : ~~max;
-	        // can't be max + 0.5 otherwise it will round up if `rand`
-	        // returns `max` causing it to overflow range.
-	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
-	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
-	    }
-
-	    module.exports = randInt;
-
-
-
-/***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var isKind = __webpack_require__(14);
-	    /**
-	     */
-	    var isArray = Array.isArray || function (val) {
-	        return isKind(val, 'Array');
-	    };
-	    module.exports = isArray;
-
-
-
-/***/ },
-/* 9 */
-/***/ function(module, exports, __webpack_require__) {
-
 	
 
 	    /**
@@ -514,10 +476,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 10 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var hasOwn = __webpack_require__(9);
+	var hasOwn = __webpack_require__(7);
 
 	    var _hasDontEnumBug,
 	        _dontEnums;
@@ -592,6 +554,44 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    module.exports = forIn;
 
+
+
+
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var MIN_INT = __webpack_require__(11);
+	var MAX_INT = __webpack_require__(12);
+	var rand = __webpack_require__(13);
+
+	    /**
+	     * Gets random integer inside range or snap to min/max values.
+	     */
+	    function randInt(min, max){
+	        min = min == null? MIN_INT : ~~min;
+	        max = max == null? MAX_INT : ~~max;
+	        // can't be max + 0.5 otherwise it will round up if `rand`
+	        // returns `max` causing it to overflow range.
+	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
+	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
+	    }
+
+	    module.exports = randInt;
+
+
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var isKind = __webpack_require__(14);
+	    /**
+	     */
+	    var isArray = Array.isArray || function (val) {
+	        return isKind(val, 'Array');
+	    };
+	    module.exports = isArray;
 
 
 
