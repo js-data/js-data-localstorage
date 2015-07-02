@@ -1,3 +1,25 @@
+##### 2.0.0 - 02 July 2015
+
+Stable Version 2.0.0
+
+##### 2.0.0-rc.1 - 27 June 2015
+
+###### Breaking API changes
+- Removed use of `getEndpoint()`, now just using `endpoint`. Data will now potentially be stored under different keys than before.
+
+##### 2.0.0-beta.4 - 18 April 2015
+
+Fix
+
+##### 2.0.0-beta.3 - 18 April 2015
+
+###### Backwards compatible bug fixes
+- #9 - Race condition, tasks need to be atomic
+
+##### 2.0.0-beta.1 - 17 April 2015
+
+Prepare for 2.0.
+
 ##### 1.1.1 - 25 March 2015
 
 Using `import` instead of require. Fix possible value undefined errors.

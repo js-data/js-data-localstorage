@@ -1,6 +1,6 @@
 /*!
  * js-data-localstorage
- * @version 1.1.1 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
+ * @version 2.0.0 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
  * @author Jason Dobry <jason.dobry@gmail.com>
  * @copyright (c) 2014-2015 Jason Dobry 
  * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
@@ -63,33 +63,68 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-	var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-	var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
-
-	var JSData = _interopRequire(__webpack_require__(1));
+	var JSData = __webpack_require__(1);
+	var keys = __webpack_require__(2);
+	var guid = __webpack_require__(3);
 
 	var emptyStore = new JSData.DS();
 	var DSUtils = JSData.DSUtils;
+	var omit = DSUtils.omit;
 	var makePath = DSUtils.makePath;
 	var deepMixIn = DSUtils.deepMixIn;
 	var toJson = DSUtils.toJson;
 	var fromJson = DSUtils.fromJson;
 	var forEach = DSUtils.forEach;
 	var removeCircular = DSUtils.removeCircular;
+
 	var filter = emptyStore.defaults.defaultFilter;
-	var omit = __webpack_require__(2);
-	var guid = __webpack_require__(4);
-	var keys = __webpack_require__(3);
-	var P = DSUtils.Promise;
 
 	var Defaults = function Defaults() {
 	  _classCallCheck(this, Defaults);
 	};
 
-	Defaults.prototype.basePath = "";
+	Defaults.prototype.basePath = '';
+
+	var queue = [];
+	var taskInProcess = false;
+
+	function enqueue(task) {
+	  queue.push(task);
+	}
+
+	function dequeue() {
+	  if (queue.length && !taskInProcess) {
+	    taskInProcess = true;
+	    queue[0]();
+	  }
+	}
+
+	function queueTask(task) {
+	  if (!queue.length) {
+	    enqueue(task);
+	    dequeue();
+	  } else {
+	    enqueue(task);
+	  }
+	}
+
+	function createTask(fn) {
+	  return new DSUtils.Promise(fn).then(function (result) {
+	    taskInProcess = false;
+	    queue.shift();
+	    setTimeout(dequeue, 0);
+	    return result;
+	  }, function (err) {
+	    taskInProcess = false;
+	    queue.shift();
+	    setTimeout(dequeue, 0);
+	    return DSUtils.Promise.reject(err);
+	  });
+	}
 
 	var DSLocalStorageAdapter = (function () {
 	  function DSLocalStorageAdapter(options) {
@@ -100,160 +135,193 @@ return /******/ (function(modules) { // webpackBootstrap
 	    deepMixIn(this.defaults, options);
 	  }
 
-	  _createClass(DSLocalStorageAdapter, {
-	    getPath: {
-	      value: function getPath(resourceConfig, options) {
-	        return makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.name);
-	      }
-	    },
-	    getIdPath: {
-	      value: function getIdPath(resourceConfig, options, id) {
-	        return makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.getEndpoint(id, options), id);
-	      }
-	    },
-	    getIds: {
-	      value: function getIds(resourceConfig, options) {
-	        var ids = undefined;
-	        var idsPath = this.getPath(resourceConfig, options);
-	        var idsJson = localStorage.getItem(idsPath);
-	        if (idsJson) {
-	          ids = fromJson(idsJson);
-	        } else {
-	          localStorage.setItem(idsPath, toJson({}));
-	          ids = {};
-	        }
-	        return ids;
-	      }
-	    },
-	    saveKeys: {
-	      value: function saveKeys(ids, resourceConfig, options) {
-	        localStorage.setItem(this.getPath(resourceConfig, options), toJson(ids));
-	      }
-	    },
-	    ensureId: {
-	      value: function ensureId(id, resourceConfig, options) {
-	        var ids = this.getIds(resourceConfig, options);
-	        ids[id] = 1;
-	        this.saveKeys(ids, resourceConfig, options);
-	      }
-	    },
-	    removeId: {
-	      value: function removeId(id, resourceConfig, options) {
-	        var ids = this.getIds(resourceConfig, options);
-	        delete ids[id];
-	        this.saveKeys(ids, resourceConfig, options);
-	      }
-	    },
-	    GET: {
-	      value: function GET(key) {
-	        return new P(function (resolve) {
-	          var item = localStorage.getItem(key);
-	          resolve(item ? fromJson(item) : undefined);
-	        });
-	      }
-	    },
-	    PUT: {
-	      value: function PUT(key, value) {
-	        var DSLocalStorageAdapter = this;
-	        return DSLocalStorageAdapter.GET(key).then(function (item) {
-	          if (item) {
-	            deepMixIn(item, removeCircular(value));
-	          }
-	          localStorage.setItem(key, toJson(item || value));
-	          return DSLocalStorageAdapter.GET(key);
-	        });
-	      }
-	    },
-	    DEL: {
-	      value: function DEL(key) {
-	        return new P(function (resolve) {
-	          localStorage.removeItem(key);
-	          resolve();
-	        });
-	      }
-	    },
-	    find: {
-	      value: function find(resourceConfig, id, options) {
-	        return this.GET(this.getIdPath(resourceConfig, options || {}, id)).then(function (item) {
-	          return !item ? P.reject(new Error("Not Found!")) : item;
-	        });
-	      }
-	    },
-	    findAll: {
-	      value: function findAll(resourceConfig, params, options) {
-	        var _this = this;
-	        return new P(function (resolve) {
-	          options = options || {};
-	          if (!("allowSimpleWhere" in options)) {
-	            options.allowSimpleWhere = true;
-	          }
-	          var items = [];
-	          var ids = keys(_this.getIds(resourceConfig, options));
-	          forEach(ids, function (id) {
-	            var itemJson = localStorage.getItem(_this.getIdPath(resourceConfig, options, id));
-	            if (itemJson) {
-	              items.push(fromJson(itemJson));
-	            }
-	          });
-	          resolve(filter.call(emptyStore, items, resourceConfig.name, params, options));
-	        });
-	      }
-	    },
-	    create: {
-	      value: function create(resourceConfig, attrs, options) {
-	        var _this = this;
-	        attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid();
-	        options = options || {};
-	        return _this.PUT(makePath(_this.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])), omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
-	          _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
-	          return item;
-	        });
-	      }
-	    },
-	    update: {
-	      value: function update(resourceConfig, id, attrs, options) {
-	        var _this = this;
-	        options = options || {};
-	        return _this.PUT(_this.getIdPath(resourceConfig, options, id), omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
-	          _this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
-	          return item;
-	        });
-	      }
-	    },
-	    updateAll: {
-	      value: function updateAll(resourceConfig, attrs, params, options) {
-	        var _this = this;
-	        return _this.findAll(resourceConfig, params, options).then(function (items) {
-	          var tasks = [];
-	          forEach(items, function (item) {
-	            return tasks.push(_this.update(resourceConfig, item[resourceConfig.idAttribute], omit(attrs, resourceConfig.relationFields || []), options));
-	          });
-	          return P.all(tasks);
-	        });
-	      }
-	    },
-	    destroy: {
-	      value: function destroy(resourceConfig, id, options) {
-	        var _this = this;
-	        options = options || {};
-	        return _this.DEL(_this.getIdPath(resourceConfig, options, id)).then(function () {
-	          return _this.removeId(id, resourceConfig.name, options);
-	        });
-	      }
-	    },
-	    destroyAll: {
-	      value: function destroyAll(resourceConfig, params, options) {
-	        var _this = this;
-	        return _this.findAll(resourceConfig, params, options).then(function (items) {
-	          var tasks = [];
-	          forEach(items, function (item) {
-	            return tasks.push(_this.destroy(resourceConfig, item[resourceConfig.idAttribute], options));
-	          });
-	          return P.all(tasks);
-	        });
-	      }
+	  _createClass(DSLocalStorageAdapter, [{
+	    key: 'getPath',
+	    value: function getPath(resourceConfig, options) {
+	      return makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.name);
 	    }
-	  });
+	  }, {
+	    key: 'getIdPath',
+	    value: function getIdPath(resourceConfig, options, id) {
+	      return makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.endpoint, id);
+	    }
+	  }, {
+	    key: 'getIds',
+	    value: function getIds(resourceConfig, options) {
+	      var ids = undefined;
+	      var idsPath = this.getPath(resourceConfig, options);
+	      var idsJson = localStorage.getItem(idsPath);
+	      if (idsJson) {
+	        ids = fromJson(idsJson);
+	      } else {
+	        localStorage.setItem(idsPath, toJson({}));
+	        ids = {};
+	      }
+	      return ids;
+	    }
+	  }, {
+	    key: 'saveKeys',
+	    value: function saveKeys(ids, resourceConfig, options) {
+	      localStorage.setItem(this.getPath(resourceConfig, options), toJson(ids));
+	    }
+	  }, {
+	    key: 'ensureId',
+	    value: function ensureId(id, resourceConfig, options) {
+	      var ids = this.getIds(resourceConfig, options);
+	      ids[id] = 1;
+	      this.saveKeys(ids, resourceConfig, options);
+	    }
+	  }, {
+	    key: 'removeId',
+	    value: function removeId(id, resourceConfig, options) {
+	      var ids = this.getIds(resourceConfig, options);
+	      delete ids[id];
+	      this.saveKeys(ids, resourceConfig, options);
+	    }
+	  }, {
+	    key: 'GET',
+	    value: function GET(key) {
+	      return new DSUtils.Promise(function (resolve) {
+	        var item = localStorage.getItem(key);
+	        resolve(item ? fromJson(item) : undefined);
+	      });
+	    }
+	  }, {
+	    key: 'PUT',
+	    value: function PUT(key, value) {
+	      var DSLocalStorageAdapter = this;
+	      return DSLocalStorageAdapter.GET(key).then(function (item) {
+	        if (item) {
+	          deepMixIn(item, removeCircular(value));
+	        }
+	        localStorage.setItem(key, toJson(item || value));
+	        return DSLocalStorageAdapter.GET(key);
+	      });
+	    }
+	  }, {
+	    key: 'DEL',
+	    value: function DEL(key) {
+	      return new DSUtils.Promise(function (resolve) {
+	        localStorage.removeItem(key);
+	        resolve();
+	      });
+	    }
+	  }, {
+	    key: 'find',
+	    value: function find(resourceConfig, id, options) {
+	      var _this = this;
+
+	      return createTask(function (resolve, reject) {
+	        queueTask(function () {
+	          _this.GET(_this.getIdPath(resourceConfig, options || {}, id)).then(function (item) {
+	            return !item ? reject(new Error('Not Found!')) : resolve(item);
+	          }, reject);
+	        });
+	      });
+	    }
+	  }, {
+	    key: 'findAll',
+	    value: function findAll(resourceConfig, params, options) {
+	      var _this2 = this;
+
+	      return createTask(function (resolve, reject) {
+	        queueTask(function () {
+	          try {
+	            (function () {
+	              options = options || {};
+	              if (!('allowSimpleWhere' in options)) {
+	                options.allowSimpleWhere = true;
+	              }
+	              var items = [];
+	              var ids = keys(_this2.getIds(resourceConfig, options));
+	              forEach(ids, function (id) {
+	                var itemJson = localStorage.getItem(_this2.getIdPath(resourceConfig, options, id));
+	                if (itemJson) {
+	                  items.push(fromJson(itemJson));
+	                }
+	              });
+	              resolve(filter.call(emptyStore, items, resourceConfig.name, params, options));
+	            })();
+	          } catch (err) {
+	            reject(err);
+	          }
+	        });
+	      });
+	    }
+	  }, {
+	    key: 'create',
+	    value: function create(resourceConfig, attrs, options) {
+	      var _this3 = this;
+
+	      return createTask(function (resolve, reject) {
+	        queueTask(function () {
+	          attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid();
+	          options = options || {};
+	          _this3.PUT(makePath(_this3.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])), omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
+	            _this3.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
+	            resolve(item);
+	          })['catch'](reject);
+	        });
+	      });
+	    }
+	  }, {
+	    key: 'update',
+	    value: function update(resourceConfig, id, attrs, options) {
+	      var _this4 = this;
+
+	      return createTask(function (resolve, reject) {
+	        queueTask(function () {
+	          options = options || {};
+	          _this4.PUT(_this4.getIdPath(resourceConfig, options, id), omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
+	            _this4.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
+	            resolve(item);
+	          })['catch'](reject);
+	        });
+	      });
+	    }
+	  }, {
+	    key: 'updateAll',
+	    value: function updateAll(resourceConfig, attrs, params, options) {
+	      var _this5 = this;
+
+	      return this.findAll(resourceConfig, params, options).then(function (items) {
+	        var tasks = [];
+	        forEach(items, function (item) {
+	          return tasks.push(_this5.update(resourceConfig, item[resourceConfig.idAttribute], omit(attrs, resourceConfig.relationFields || []), options));
+	        });
+	        return DSUtils.Promise.all(tasks);
+	      });
+	    }
+	  }, {
+	    key: 'destroy',
+	    value: function destroy(resourceConfig, id, options) {
+	      var _this6 = this;
+
+	      return createTask(function (resolve, reject) {
+	        queueTask(function () {
+	          options = options || {};
+	          _this6.DEL(_this6.getIdPath(resourceConfig, options, id)).then(function () {
+	            return _this6.removeId(id, resourceConfig.name, options);
+	          }).then(function () {
+	            return resolve(null);
+	          }, reject);
+	        });
+	      });
+	    }
+	  }, {
+	    key: 'destroyAll',
+	    value: function destroyAll(resourceConfig, params, options) {
+	      var _this7 = this;
+
+	      return this.findAll(resourceConfig, params, options).then(function (items) {
+	        var tasks = [];
+	        forEach(items, function (item) {
+	          return tasks.push(_this7.destroy(resourceConfig, item[resourceConfig.idAttribute], options));
+	        });
+	        return DSUtils.Promise.all(tasks);
+	      });
+	    }
+	  }]);
 
 	  return DSLocalStorageAdapter;
 	})();
@@ -270,34 +338,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var slice = __webpack_require__(7);
-	var contains = __webpack_require__(8);
-
-	    /**
-	     * Return a copy of the object, filtered to only contain properties except the blacklisted keys.
-	     */
-	    function omit(obj, var_keys){
-	        var keys = typeof arguments[1] !== 'string'? arguments[1] : slice(arguments, 1),
-	            out = {};
-
-	        for (var property in obj) {
-	            if (obj.hasOwnProperty(property) && !contains(keys, property)) {
-	                out[property] = obj[property];
-	            }
-	        }
-	        return out;
-	    }
-
-	    module.exports = omit;
-
-
-
-
-/***/ },
-/* 3 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var forOwn = __webpack_require__(9);
+	var forOwn = __webpack_require__(4);
 
 	    /**
 	     * Get object keys
@@ -316,7 +357,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 4 */
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var randHex = __webpack_require__(5);
@@ -342,6 +383,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	    );
 	  }
 	  module.exports = guid;
+
+
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var hasOwn = __webpack_require__(7);
+	var forIn = __webpack_require__(8);
+
+	    /**
+	     * Similar to Array/forEach but works over object properties and fixes Don't
+	     * Enum bug on IE.
+	     * based on: http://whattheheadsaid.com/2010/10/a-safer-object-keys-compatibility-implementation
+	     */
+	    function forOwn(obj, fn, thisObj){
+	        forIn(obj, function(val, key){
+	            if (hasOwn(obj, key)) {
+	                return fn.call(thisObj, obj[key], key, obj);
+	            }
+	        });
+	    }
+
+	    module.exports = forOwn;
+
 
 
 
@@ -374,8 +440,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var randInt = __webpack_require__(10);
-	var isArray = __webpack_require__(11);
+	var randInt = __webpack_require__(9);
+	var isArray = __webpack_require__(10);
 
 	    /**
 	     * Returns a random element from the supplied arguments
@@ -398,160 +464,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 
 	    /**
-	     * Create slice of source array or array-like object
-	     */
-	    function slice(arr, start, end){
-	        var len = arr.length;
-
-	        if (start == null) {
-	            start = 0;
-	        } else if (start < 0) {
-	            start = Math.max(len + start, 0);
-	        } else {
-	            start = Math.min(start, len);
-	        }
-
-	        if (end == null) {
-	            end = len;
-	        } else if (end < 0) {
-	            end = Math.max(len + end, 0);
-	        } else {
-	            end = Math.min(end, len);
-	        }
-
-	        var result = [];
-	        while (start < end) {
-	            result.push(arr[start++]);
-	        }
-
-	        return result;
-	    }
-
-	    module.exports = slice;
-
-
-
-
-/***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var indexOf = __webpack_require__(12);
-
-	    /**
-	     * If array contains values.
-	     */
-	    function contains(arr, val) {
-	        return indexOf(arr, val) !== -1;
-	    }
-	    module.exports = contains;
-
-
-
-/***/ },
-/* 9 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var hasOwn = __webpack_require__(13);
-	var forIn = __webpack_require__(14);
-
-	    /**
-	     * Similar to Array/forEach but works over object properties and fixes Don't
-	     * Enum bug on IE.
-	     * based on: http://whattheheadsaid.com/2010/10/a-safer-object-keys-compatibility-implementation
-	     */
-	    function forOwn(obj, fn, thisObj){
-	        forIn(obj, function(val, key){
-	            if (hasOwn(obj, key)) {
-	                return fn.call(thisObj, obj[key], key, obj);
-	            }
-	        });
-	    }
-
-	    module.exports = forOwn;
-
-
-
-
-/***/ },
-/* 10 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var MIN_INT = __webpack_require__(15);
-	var MAX_INT = __webpack_require__(16);
-	var rand = __webpack_require__(17);
-
-	    /**
-	     * Gets random integer inside range or snap to min/max values.
-	     */
-	    function randInt(min, max){
-	        min = min == null? MIN_INT : ~~min;
-	        max = max == null? MAX_INT : ~~max;
-	        // can't be max + 0.5 otherwise it will round up if `rand`
-	        // returns `max` causing it to overflow range.
-	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
-	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
-	    }
-
-	    module.exports = randInt;
-
-
-
-/***/ },
-/* 11 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var isKind = __webpack_require__(18);
-	    /**
-	     */
-	    var isArray = Array.isArray || function (val) {
-	        return isKind(val, 'Array');
-	    };
-	    module.exports = isArray;
-
-
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-
-	    /**
-	     * Array.indexOf
-	     */
-	    function indexOf(arr, item, fromIndex) {
-	        fromIndex = fromIndex || 0;
-	        if (arr == null) {
-	            return -1;
-	        }
-
-	        var len = arr.length,
-	            i = fromIndex < 0 ? len + fromIndex : fromIndex;
-	        while (i < len) {
-	            // we iterate over sparse items since there is no way to make it
-	            // work properly on IE 7-8. see #64
-	            if (arr[i] === item) {
-	                return i;
-	            }
-
-	            i++;
-	        }
-
-	        return -1;
-	    }
-
-	    module.exports = indexOf;
-
-
-
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-
-	    /**
 	     * Safer Object.hasOwnProperty
 	     */
 	     function hasOwn(obj, prop){
@@ -564,10 +476,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 14 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var hasOwn = __webpack_require__(13);
+	var hasOwn = __webpack_require__(7);
 
 	    var _hasDontEnumBug,
 	        _dontEnums;
@@ -646,7 +558,45 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 15 */
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var MIN_INT = __webpack_require__(11);
+	var MAX_INT = __webpack_require__(12);
+	var rand = __webpack_require__(13);
+
+	    /**
+	     * Gets random integer inside range or snap to min/max values.
+	     */
+	    function randInt(min, max){
+	        min = min == null? MIN_INT : ~~min;
+	        max = max == null? MAX_INT : ~~max;
+	        // can't be max + 0.5 otherwise it will round up if `rand`
+	        // returns `max` causing it to overflow range.
+	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
+	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
+	    }
+
+	    module.exports = randInt;
+
+
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var isKind = __webpack_require__(14);
+	    /**
+	     */
+	    var isArray = Array.isArray || function (val) {
+	        return isKind(val, 'Array');
+	    };
+	    module.exports = isArray;
+
+
+
+/***/ },
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -658,7 +608,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 16 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -670,12 +620,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 17 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var random = __webpack_require__(19);
-	var MIN_INT = __webpack_require__(15);
-	var MAX_INT = __webpack_require__(16);
+	var random = __webpack_require__(15);
+	var MIN_INT = __webpack_require__(11);
+	var MAX_INT = __webpack_require__(12);
 
 	    /**
 	     * Returns random number inside range
@@ -691,10 +641,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 18 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var kindOf = __webpack_require__(20);
+	var kindOf = __webpack_require__(16);
 	    /**
 	     * Check if value is from a specific "kind".
 	     */
@@ -706,7 +656,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 19 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -730,7 +680,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 20 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
