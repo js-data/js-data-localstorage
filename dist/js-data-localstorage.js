@@ -1,6 +1,6 @@
 /*!
  * js-data-localstorage
- * @version 2.0.0 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
+ * @version 2.0.1 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
  * @author Jason Dobry <jason.dobry@gmail.com>
  * @copyright (c) 2014-2015 Jason Dobry 
  * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
@@ -68,11 +68,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 	var JSData = __webpack_require__(1);
-	var keys = __webpack_require__(2);
-	var guid = __webpack_require__(3);
+	var guid = __webpack_require__(2);
 
 	var emptyStore = new JSData.DS();
 	var DSUtils = JSData.DSUtils;
+	var keys = DSUtils.keys;
 	var omit = DSUtils.omit;
 	var makePath = DSUtils.makePath;
 	var deepMixIn = DSUtils.deepMixIn;
@@ -338,30 +338,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var forOwn = __webpack_require__(4);
-
-	    /**
-	     * Get object keys
-	     */
-	     var keys = Object.keys || function (obj) {
-	            var keys = [];
-	            forOwn(obj, function(val, key){
-	                keys.push(key);
-	            });
-	            return keys;
-	        };
-
-	    module.exports = keys;
-
-
-
-
-/***/ },
-/* 3 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var randHex = __webpack_require__(5);
-	var choice = __webpack_require__(6);
+	var randHex = __webpack_require__(3);
+	var choice = __webpack_require__(4);
 
 	  /**
 	   * Returns pseudo-random guid (UUID v4)
@@ -387,35 +365,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 4 */
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var hasOwn = __webpack_require__(7);
-	var forIn = __webpack_require__(8);
-
-	    /**
-	     * Similar to Array/forEach but works over object properties and fixes Don't
-	     * Enum bug on IE.
-	     * based on: http://whattheheadsaid.com/2010/10/a-safer-object-keys-compatibility-implementation
-	     */
-	    function forOwn(obj, fn, thisObj){
-	        forIn(obj, function(val, key){
-	            if (hasOwn(obj, key)) {
-	                return fn.call(thisObj, obj[key], key, obj);
-	            }
-	        });
-	    }
-
-	    module.exports = forOwn;
-
-
-
-
-/***/ },
-/* 5 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var choice = __webpack_require__(6);
+	var choice = __webpack_require__(4);
 
 	    var _chars = '0123456789abcdef'.split('');
 
@@ -437,11 +390,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 6 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var randInt = __webpack_require__(9);
-	var isArray = __webpack_require__(10);
+	var randInt = __webpack_require__(5);
+	var isArray = __webpack_require__(6);
 
 	    /**
 	     * Returns a random element from the supplied arguments
@@ -458,112 +411,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 7 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
-
-	    /**
-	     * Safer Object.hasOwnProperty
-	     */
-	     function hasOwn(obj, prop){
-	         return Object.prototype.hasOwnProperty.call(obj, prop);
-	     }
-
-	     module.exports = hasOwn;
-
-
-
-
-/***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var hasOwn = __webpack_require__(7);
-
-	    var _hasDontEnumBug,
-	        _dontEnums;
-
-	    function checkDontEnum(){
-	        _dontEnums = [
-	                'toString',
-	                'toLocaleString',
-	                'valueOf',
-	                'hasOwnProperty',
-	                'isPrototypeOf',
-	                'propertyIsEnumerable',
-	                'constructor'
-	            ];
-
-	        _hasDontEnumBug = true;
-
-	        for (var key in {'toString': null}) {
-	            _hasDontEnumBug = false;
-	        }
-	    }
-
-	    /**
-	     * Similar to Array/forEach but works over object properties and fixes Don't
-	     * Enum bug on IE.
-	     * based on: http://whattheheadsaid.com/2010/10/a-safer-object-keys-compatibility-implementation
-	     */
-	    function forIn(obj, fn, thisObj){
-	        var key, i = 0;
-	        // no need to check if argument is a real object that way we can use
-	        // it for arrays, functions, date, etc.
-
-	        //post-pone check till needed
-	        if (_hasDontEnumBug == null) checkDontEnum();
-
-	        for (key in obj) {
-	            if (exec(fn, obj, key, thisObj) === false) {
-	                break;
-	            }
-	        }
-
-
-	        if (_hasDontEnumBug) {
-	            var ctor = obj.constructor,
-	                isProto = !!ctor && obj === ctor.prototype;
-
-	            while (key = _dontEnums[i++]) {
-	                // For constructor, if it is a prototype object the constructor
-	                // is always non-enumerable unless defined otherwise (and
-	                // enumerated above).  For non-prototype objects, it will have
-	                // to be defined on this object, since it cannot be defined on
-	                // any prototype objects.
-	                //
-	                // For other [[DontEnum]] properties, check if the value is
-	                // different than Object prototype value.
-	                if (
-	                    (key !== 'constructor' ||
-	                        (!isProto && hasOwn(obj, key))) &&
-	                    obj[key] !== Object.prototype[key]
-	                ) {
-	                    if (exec(fn, obj, key, thisObj) === false) {
-	                        break;
-	                    }
-	                }
-	            }
-	        }
-	    }
-
-	    function exec(fn, obj, key, thisObj){
-	        return fn.call(thisObj, obj[key], key, obj);
-	    }
-
-	    module.exports = forIn;
-
-
-
-
-/***/ },
-/* 9 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var MIN_INT = __webpack_require__(11);
-	var MAX_INT = __webpack_require__(12);
-	var rand = __webpack_require__(13);
+	var MIN_INT = __webpack_require__(8);
+	var MAX_INT = __webpack_require__(9);
+	var rand = __webpack_require__(10);
 
 	    /**
 	     * Gets random integer inside range or snap to min/max values.
@@ -582,10 +435,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 10 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var isKind = __webpack_require__(14);
+	var isKind = __webpack_require__(7);
 	    /**
 	     */
 	    var isArray = Array.isArray || function (val) {
@@ -596,7 +449,22 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 11 */
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var kindOf = __webpack_require__(12);
+	    /**
+	     * Check if value is from a specific "kind".
+	     */
+	    function isKind(val, kind){
+	        return kindOf(val) === kind;
+	    }
+	    module.exports = isKind;
+
+
+
+/***/ },
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -608,7 +476,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 12 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -620,12 +488,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 13 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var random = __webpack_require__(15);
-	var MIN_INT = __webpack_require__(11);
-	var MAX_INT = __webpack_require__(12);
+	var random = __webpack_require__(11);
+	var MIN_INT = __webpack_require__(8);
+	var MAX_INT = __webpack_require__(9);
 
 	    /**
 	     * Returns random number inside range
@@ -641,22 +509,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 14 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var kindOf = __webpack_require__(16);
-	    /**
-	     * Check if value is from a specific "kind".
-	     */
-	    function isKind(val, kind){
-	        return kindOf(val) === kind;
-	    }
-	    module.exports = isKind;
-
-
-
-/***/ },
-/* 15 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -680,7 +533,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 16 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	

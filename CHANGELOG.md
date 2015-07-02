@@ -1,3 +1,7 @@
+##### 2.0.1 - 02 July 2015
+
+Removed unnecessary dependency
+
 ##### 2.0.0 - 02 July 2015
 
 Stable Version 2.0.0

@@ -1,10 +1,9 @@
 let JSData = require('js-data');
-let keys = require('mout/object/keys');
 let guid = require('mout/random/guid');
 
 let emptyStore = new JSData.DS();
 let { DSUtils } = JSData;
-let { omit, makePath, deepMixIn, toJson, fromJson, forEach, removeCircular } = DSUtils;
+let { keys, omit, makePath, deepMixIn, toJson, fromJson, forEach, removeCircular } = DSUtils;
 let filter = emptyStore.defaults.defaultFilter;
 
 class Defaults {
