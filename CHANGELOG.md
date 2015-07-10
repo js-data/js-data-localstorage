@@ -1,3 +1,11 @@
+##### 2.1.0 - 10 July 2015
+
+Upgraded dependencies
+
+###### Backwards compatible API changes
+- #10 - Add support for loading relations in find()
+- #11 - Add support for loading relations in findAll()
+
 ##### 2.0.1 - 02 July 2015
 
 Removed unnecessary dependency

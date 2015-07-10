@@ -1,9 +1,10 @@
 let JSData = require('js-data');
 let guid = require('mout/random/guid');
+let unique = require('mout/array/unique');
+let map = require('mout/array/map');
 
 let emptyStore = new JSData.DS();
 let { DSUtils } = JSData;
-let { keys, omit, makePath, deepMixIn, toJson, fromJson, forEach, removeCircular } = DSUtils;
 let filter = emptyStore.defaults.defaultFilter;
 
 class Defaults {
@@ -53,15 +54,15 @@ class DSLocalStorageAdapter {
   constructor(options) {
     options = options || {};
     this.defaults = new Defaults();
-    deepMixIn(this.defaults, options);
+    DSUtils.deepMixIn(this.defaults, options);
   }
 
   getPath(resourceConfig, options) {
-    return makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.name);
+    return DSUtils.makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.name);
   }
 
   getIdPath(resourceConfig, options, id) {
-    return makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.endpoint, id);
+    return DSUtils.makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.endpoint, id);
   }
 
   getIds(resourceConfig, options) {
@@ -69,16 +70,16 @@ class DSLocalStorageAdapter {
     let idsPath = this.getPath(resourceConfig, options);
     let idsJson = localStorage.getItem(idsPath);
     if (idsJson) {
-      ids = fromJson(idsJson);
+      ids = DSUtils.fromJson(idsJson);
     } else {
-      localStorage.setItem(idsPath, toJson({}));
+      localStorage.setItem(idsPath, DSUtils.toJson({}));
       ids = {};
     }
     return ids;
   }
 
   saveKeys(ids, resourceConfig, options) {
-    localStorage.setItem(this.getPath(resourceConfig, options), toJson(ids));
+    localStorage.setItem(this.getPath(resourceConfig, options), DSUtils.toJson(ids));
   }
 
   ensureId(id, resourceConfig, options) {
@@ -96,7 +97,7 @@ class DSLocalStorageAdapter {
   GET(key) {
     return new DSUtils.Promise(resolve => {
       let item = localStorage.getItem(key);
-      resolve(item ? fromJson(item) : undefined);
+      resolve(item ? DSUtils.fromJson(item) : undefined);
     });
   }
 
@@ -104,9 +105,9 @@ class DSLocalStorageAdapter {
     let DSLocalStorageAdapter = this;
     return DSLocalStorageAdapter.GET(key).then(function (item) {
       if (item) {
-        deepMixIn(item, removeCircular(value));
+        DSUtils.deepMixIn(item, DSUtils.removeCircular(value));
       }
-      localStorage.setItem(key, toJson(item || value));
+      localStorage.setItem(key, DSUtils.toJson(item || value));
       return DSLocalStorageAdapter.GET(key);
     });
   }
@@ -119,36 +120,209 @@ class DSLocalStorageAdapter {
   }
 
   find(resourceConfig, id, options) {
-    return createTask((resolve, reject) => {
-      queueTask(() => {
-        this.GET(this.getIdPath(resourceConfig, options || {}, id))
-          .then(item => !item ? reject(new Error('Not Found!')) : resolve(item), reject);
-      });
+    let instance;
+    options = options || {};
+    options.with = options.with || [];
+    return new DSUtils.Promise((resolve, reject) => {
+      this.GET(this.getIdPath(resourceConfig, options || {}, id))
+        .then(item => !item ? reject(new Error('Not Found!')) : item)
+        .then(_instance => {
+          instance = _instance;
+          let tasks = [];
+
+          DSUtils.forEach(resourceConfig.relationList, def => {
+            let relationName = def.relation;
+            let relationDef = resourceConfig.getResource(relationName);
+            let containedName = null;
+            if (DSUtils.contains(options.with, relationName)) {
+              containedName = relationName;
+            } else if (DSUtils.contains(options.with, def.localField)) {
+              containedName = def.localField;
+            }
+            if (containedName) {
+              let __options = DSUtils.deepMixIn({}, options.orig ? options.orig() : options);
+              __options = DSUtils._(relationDef, __options);
+              DSUtils.remove(__options.with, containedName);
+              DSUtils.forEach(__options.with, (relation, i) => {
+                if (relation && relation.indexOf(containedName) === 0 && relation.length >= containedName.length && relation[containedName.length] === '.') {
+                  __options.with[i] = relation.substr(containedName.length + 1);
+                }
+              });
+
+              let task;
+
+              if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {
+                task = this.findAll(resourceConfig.getResource(relationName), {
+                  where: {
+                    [def.foreignKey]: {
+                      '==': instance[resourceConfig.idAttribute]
+                    }
+                  }
+                }, __options).then(relatedItems => {
+                  if (def.type === 'hasOne' && relatedItems.length) {
+                    DSUtils.set(instance, def.localField, relatedItems[0]);
+                  } else {
+                    DSUtils.set(instance, def.localField, relatedItems);
+                  }
+                  return relatedItems;
+                });
+              } else if (def.type === 'hasMany' && def.localKeys) {
+                let localKeys = [];
+                let itemKeys = instance[def.localKeys] || [];
+                itemKeys = Array.isArray(itemKeys) ? itemKeys : DSUtils.keys(itemKeys);
+                localKeys = localKeys.concat(itemKeys || []);
+                task = this.findAll(resourceConfig.getResource(relationName), {
+                  where: {
+                    [relationDef.idAttribute]: {
+                      'in': DSUtils.filter(unique(localKeys), x => x)
+                    }
+                  }
+                }, __options).then(relatedItems => {
+                  DSUtils.set(instance, def.localField, relatedItems);
+                  return relatedItems;
+                });
+              } else if (def.type === 'belongsTo' || (def.type === 'hasOne' && def.localKey)) {
+                task = this.find(resourceConfig.getResource(relationName), DSUtils.get(instance, def.localKey), __options).then(relatedItem => {
+                  DSUtils.set(instance, def.localField, relatedItem);
+                  return relatedItem;
+                });
+              }
+
+              if (task) {
+                tasks.push(task);
+              }
+            }
+          });
+
+          return DSUtils.Promise.all(tasks);
+        })
+        .then(() => resolve(instance))
+        .catch(reject);
     });
   }
 
   findAll(resourceConfig, params, options) {
-    return createTask((resolve, reject) => {
-      queueTask(() => {
-        try {
-          options = options || {};
-          if (!('allowSimpleWhere' in options)) {
-            options.allowSimpleWhere = true;
-          }
-          let items = [];
-          let ids = keys(this.getIds(resourceConfig, options));
-          forEach(ids, id => {
-            let itemJson = localStorage.getItem(this.getIdPath(resourceConfig, options, id));
-            if (itemJson) {
-              items.push(fromJson(itemJson));
-            }
-          });
-          resolve(filter.call(emptyStore, items, resourceConfig.name, params, options));
-        } catch (err) {
-          reject(err);
+    let items = null;
+    options = options || {};
+    options.with = options.with || [];
+    return new DSUtils.Promise((resolve, reject) => {
+      try {
+        options = options || {};
+        if (!('allowSimpleWhere' in options)) {
+          options.allowSimpleWhere = true;
         }
-      });
-    });
+        let items = [];
+        let ids = DSUtils.keys(this.getIds(resourceConfig, options));
+        DSUtils.forEach(ids, id => {
+          let itemJson = localStorage.getItem(this.getIdPath(resourceConfig, options, id));
+          if (itemJson) {
+            items.push(DSUtils.fromJson(itemJson));
+          }
+        });
+        resolve(filter.call(emptyStore, items, resourceConfig.name, params, options));
+      } catch (err) {
+        reject(err);
+      }
+    }).then(_items => {
+        items = _items;
+        let tasks = [];
+        DSUtils.forEach(resourceConfig.relationList, def => {
+          let relationName = def.relation;
+          let relationDef = resourceConfig.getResource(relationName);
+          let containedName = null;
+          if (DSUtils.contains(options.with, relationName)) {
+            containedName = relationName;
+          } else if (DSUtils.contains(options.with, def.localField)) {
+            containedName = def.localField;
+          }
+          if (containedName) {
+            let __options = DSUtils.deepMixIn({}, options.orig ? options.orig() : options);
+            __options = DSUtils._(relationDef, __options);
+            DSUtils.remove(__options.with, containedName);
+            DSUtils.forEach(__options.with, (relation, i) => {
+              if (relation && relation.indexOf(containedName) === 0 && relation.length >= containedName.length && relation[containedName.length] === '.') {
+                __options.with[i] = relation.substr(containedName.length + 1);
+              }
+            });
+
+            let task;
+
+            if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {
+              task = this.findAll(resourceConfig.getResource(relationName), {
+                where: {
+                  [def.foreignKey]: {
+                    'in': DSUtils.filter(map(items, item => DSUtils.get(item, resourceConfig.idAttribute)), x => x)
+                  }
+                }
+              }, __options).then(relatedItems => {
+                DSUtils.forEach(items, item => {
+                  let attached = [];
+                  DSUtils.forEach(relatedItems, relatedItem => {
+                    if (DSUtils.get(relatedItem, def.foreignKey) === item[resourceConfig.idAttribute]) {
+                      attached.push(relatedItem);
+                    }
+                  });
+                  if (def.type === 'hasOne' && attached.length) {
+                    DSUtils.set(item, def.localField, attached[0]);
+                  } else {
+                    DSUtils.set(item, def.localField, attached);
+                  }
+                });
+                return relatedItems;
+              });
+            } else if (def.type === 'hasMany' && def.localKeys) {
+              let localKeys = [];
+              DSUtils.forEach(items, item => {
+                let itemKeys = item[def.localKeys] || [];
+                itemKeys = Array.isArray(itemKeys) ? itemKeys : DSUtils.keys(itemKeys);
+                localKeys = localKeys.concat(itemKeys || []);
+              });
+              task = this.findAll(resourceConfig.getResource(relationName), {
+                where: {
+                  [relationDef.idAttribute]: {
+                    'in': DSUtils.filter(unique(localKeys), x => x)
+                  }
+                }
+              }, __options).then(relatedItems => {
+                DSUtils.forEach(items, item => {
+                  let attached = [];
+                  let itemKeys = item[def.localKeys] || [];
+                  itemKeys = Array.isArray(itemKeys) ? itemKeys : DSUtils.keys(itemKeys);
+                  DSUtils.forEach(relatedItems, relatedItem => {
+                    if (itemKeys && DSUtils.contains(itemKeys, relatedItem[relationDef.idAttribute])) {
+                      attached.push(relatedItem);
+                    }
+                  });
+                  DSUtils.set(item, def.localField, attached);
+                });
+                return relatedItems;
+              });
+            } else if (def.type === 'belongsTo' || (def.type === 'hasOne' && def.localKey)) {
+              task = this.findAll(resourceConfig.getResource(relationName), {
+                where: {
+                  [relationDef.idAttribute]: {
+                    'in': DSUtils.filter(map(items, item => DSUtils.get(item, def.localKey)), x => x)
+                  }
+                }
+              }, __options).then(relatedItems => {
+                DSUtils.forEach(items, item => {
+                  DSUtils.forEach(relatedItems, relatedItem => {
+                    if (relatedItem[relationDef.idAttribute] === item[def.localKey]) {
+                      DSUtils.set(item, def.localField, relatedItem);
+                    }
+                  });
+                });
+                return relatedItems;
+              });
+            }
+
+            if (task) {
+              tasks.push(task);
+            }
+          }
+        });
+        return DSUtils.Promise.all(tasks);
+      }).then(() => items);
   }
 
   create(resourceConfig, attrs, options) {
@@ -157,8 +331,8 @@ class DSLocalStorageAdapter {
         attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid();
         options = options || {};
         this.PUT(
-          makePath(this.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])),
-          omit(attrs, resourceConfig.relationFields || [])
+          DSUtils.makePath(this.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])),
+          DSUtils.omit(attrs, resourceConfig.relationFields || [])
         ).then(item => {
             this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
             resolve(item);
@@ -171,7 +345,7 @@ class DSLocalStorageAdapter {
     return createTask((resolve, reject) => {
       queueTask(() => {
         options = options || {};
-        this.PUT(this.getIdPath(resourceConfig, options, id), omit(attrs, resourceConfig.relationFields || [])).then(item => {
+        this.PUT(this.getIdPath(resourceConfig, options, id), DSUtils.omit(attrs, resourceConfig.relationFields || [])).then(item => {
           this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
           resolve(item);
         }).catch(reject);
@@ -182,7 +356,7 @@ class DSLocalStorageAdapter {
   updateAll(resourceConfig, attrs, params, options) {
     return this.findAll(resourceConfig, params, options).then(items => {
       let tasks = [];
-      forEach(items, item => tasks.push(this.update(resourceConfig, item[resourceConfig.idAttribute], omit(attrs, resourceConfig.relationFields || []), options)));
+      DSUtils.forEach(items, item => tasks.push(this.update(resourceConfig, item[resourceConfig.idAttribute], DSUtils.omit(attrs, resourceConfig.relationFields || []), options)));
       return DSUtils.Promise.all(tasks);
     });
   }
@@ -201,7 +375,7 @@ class DSLocalStorageAdapter {
   destroyAll(resourceConfig, params, options) {
     return this.findAll(resourceConfig, params, options).then(items => {
       let tasks = [];
-      forEach(items, item => tasks.push(this.destroy(resourceConfig, item[resourceConfig.idAttribute], options)));
+      DSUtils.forEach(items, item => tasks.push(this.destroy(resourceConfig, item[resourceConfig.idAttribute], options)));
       return DSUtils.Promise.all(tasks);
     });
   }
