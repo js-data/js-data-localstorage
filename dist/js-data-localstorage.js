@@ -1,12 +1,12 @@
 /*!
- * js-data-localstorage
- * @version 2.1.1 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
- * @author Jason Dobry <jason.dobry@gmail.com>
- * @copyright (c) 2014-2015 Jason Dobry 
- * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
- * 
- * @overview localStorage adapter for js-data.
- */
+* js-data-localstorage
+* @version 2.1.2 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
+* @author Jason Dobry <jason.dobry@gmail.com>
+* @copyright (c) 2014-2015 Jason Dobry
+* @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
+*
+* @overview localStorage adapter for js-data.
+*/
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("js-data"));
@@ -69,10 +69,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
+	/* global: localStorage */
 	var JSData = __webpack_require__(1);
 	var guid = __webpack_require__(2);
-	var unique = __webpack_require__(3);
-	var map = __webpack_require__(4);
+	var unique = __webpack_require__(13);
+	var map = __webpack_require__(22);
 
 	var emptyStore = new JSData.DS();
 	var DSUtils = JSData.DSUtils;
@@ -510,11 +511,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return DSLocalStorageAdapter;
 	})();
 
+	DSLocalStorageAdapter.version = {
+	  full: '2.1.2',
+	  major: parseInt('2', 10),
+	  minor: parseInt('1', 10),
+	  patch: parseInt('2', 10),
+	  alpha:  true ? 'false' : false,
+	  beta:  true ? 'false' : false
+	};
+
 	module.exports = DSLocalStorageAdapter;
 
 /***/ },
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	module.exports = __WEBPACK_EXTERNAL_MODULE_1__;
 
@@ -522,8 +532,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var randHex = __webpack_require__(5);
-	var choice = __webpack_require__(6);
+	var randHex = __webpack_require__(3);
+	var choice = __webpack_require__(4);
 
 	  /**
 	   * Returns pseudo-random guid (UUID v4)
@@ -552,7 +562,201 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var filter = __webpack_require__(7);
+	var choice = __webpack_require__(4);
+
+	    var _chars = '0123456789abcdef'.split('');
+
+	    /**
+	     * Returns a random hexadecimal string
+	     */
+	    function randHex(size){
+	        size = size && size > 0? size : 6;
+	        var str = '';
+	        while (size--) {
+	            str += choice(_chars);
+	        }
+	        return str;
+	    }
+
+	    module.exports = randHex;
+
+
+
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var randInt = __webpack_require__(5);
+	var isArray = __webpack_require__(10);
+
+	    /**
+	     * Returns a random element from the supplied arguments
+	     * or from the array (if single argument is an array).
+	     */
+	    function choice(items) {
+	        var target = (arguments.length === 1 && isArray(items))? items : arguments;
+	        return target[ randInt(0, target.length - 1) ];
+	    }
+
+	    module.exports = choice;
+
+
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var MIN_INT = __webpack_require__(6);
+	var MAX_INT = __webpack_require__(7);
+	var rand = __webpack_require__(8);
+
+	    /**
+	     * Gets random integer inside range or snap to min/max values.
+	     */
+	    function randInt(min, max){
+	        min = min == null? MIN_INT : ~~min;
+	        max = max == null? MAX_INT : ~~max;
+	        // can't be max + 0.5 otherwise it will round up if `rand`
+	        // returns `max` causing it to overflow range.
+	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
+	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
+	    }
+
+	    module.exports = randInt;
+
+
+
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
+
+	/**
+	 * @constant Minimum 32-bit signed integer value (-2^31).
+	 */
+
+	    module.exports = -2147483648;
+
+
+
+/***/ },
+/* 7 */
+/***/ function(module, exports) {
+
+	/**
+	 * @constant Maximum 32-bit signed integer value. (2^31 - 1)
+	 */
+
+	    module.exports = 2147483647;
+
+
+
+/***/ },
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var random = __webpack_require__(9);
+	var MIN_INT = __webpack_require__(6);
+	var MAX_INT = __webpack_require__(7);
+
+	    /**
+	     * Returns random number inside range
+	     */
+	    function rand(min, max){
+	        min = min == null? MIN_INT : min;
+	        max = max == null? MAX_INT : max;
+	        return min + (max - min) * random();
+	    }
+
+	    module.exports = rand;
+
+
+
+/***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	
+
+	    /**
+	     * Just a wrapper to Math.random. No methods inside mout/random should call
+	     * Math.random() directly so we can inject the pseudo-random number
+	     * generator if needed (ie. in case we need a seeded random or a better
+	     * algorithm than the native one)
+	     */
+	    function random(){
+	        return random.get();
+	    }
+
+	    // we expose the method so it can be swapped if needed
+	    random.get = Math.random;
+
+	    module.exports = random;
+
+
+
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var isKind = __webpack_require__(11);
+	    /**
+	     */
+	    var isArray = Array.isArray || function (val) {
+	        return isKind(val, 'Array');
+	    };
+	    module.exports = isArray;
+
+
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var kindOf = __webpack_require__(12);
+	    /**
+	     * Check if value is from a specific "kind".
+	     */
+	    function isKind(val, kind){
+	        return kindOf(val) === kind;
+	    }
+	    module.exports = isKind;
+
+
+
+/***/ },
+/* 12 */
+/***/ function(module, exports) {
+
+	
+
+	    var _rKind = /^\[object (.*)\]$/,
+	        _toString = Object.prototype.toString,
+	        UNDEF;
+
+	    /**
+	     * Gets the "kind" of value. (e.g. "String", "Number", etc)
+	     */
+	    function kindOf(val) {
+	        if (val === null) {
+	            return 'Null';
+	        } else if (val === UNDEF) {
+	            return 'Undefined';
+	        } else {
+	            return _rKind.exec( _toString.call(val) )[1];
+	        }
+	    }
+	    module.exports = kindOf;
+
+
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var filter = __webpack_require__(14);
 
 	    /**
 	     * @return {array} Array of unique items
@@ -580,84 +784,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 4 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var makeIterator = __webpack_require__(8);
-
-	    /**
-	     * Array map
-	     */
-	    function map(arr, callback, thisObj) {
-	        callback = makeIterator(callback, thisObj);
-	        var results = [];
-	        if (arr == null){
-	            return results;
-	        }
-
-	        var i = -1, len = arr.length;
-	        while (++i < len) {
-	            results[i] = callback(arr[i], i, arr);
-	        }
-
-	        return results;
-	    }
-
-	     module.exports = map;
-
-
-
-/***/ },
-/* 5 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var choice = __webpack_require__(6);
-
-	    var _chars = '0123456789abcdef'.split('');
-
-	    /**
-	     * Returns a random hexadecimal string
-	     */
-	    function randHex(size){
-	        size = size && size > 0? size : 6;
-	        var str = '';
-	        while (size--) {
-	            str += choice(_chars);
-	        }
-	        return str;
-	    }
-
-	    module.exports = randHex;
-
-
-
-
-/***/ },
-/* 6 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var randInt = __webpack_require__(9);
-	var isArray = __webpack_require__(10);
-
-	    /**
-	     * Returns a random element from the supplied arguments
-	     * or from the array (if single argument is an array).
-	     */
-	    function choice(items) {
-	        var target = (arguments.length === 1 && isArray(items))? items : arguments;
-	        return target[ randInt(0, target.length - 1) ];
-	    }
-
-	    module.exports = choice;
-
-
-
-
-/***/ },
-/* 7 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var makeIterator = __webpack_require__(8);
+	var makeIterator = __webpack_require__(15);
 
 	    /**
 	     * Array filter
@@ -686,12 +816,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 8 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var identity = __webpack_require__(11);
-	var prop = __webpack_require__(12);
-	var deepMatches = __webpack_require__(13);
+	var identity = __webpack_require__(16);
+	var prop = __webpack_require__(17);
+	var deepMatches = __webpack_require__(18);
 
 	    /**
 	     * Converts argument into a valid iterator.
@@ -726,46 +856,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 9 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var MIN_INT = __webpack_require__(14);
-	var MAX_INT = __webpack_require__(15);
-	var rand = __webpack_require__(16);
-
-	    /**
-	     * Gets random integer inside range or snap to min/max values.
-	     */
-	    function randInt(min, max){
-	        min = min == null? MIN_INT : ~~min;
-	        max = max == null? MAX_INT : ~~max;
-	        // can't be max + 0.5 otherwise it will round up if `rand`
-	        // returns `max` causing it to overflow range.
-	        // -0.5 and + 0.49 are required to avoid bias caused by rounding
-	        return Math.round( rand(min - 0.5, max + 0.499999999999) );
-	    }
-
-	    module.exports = randInt;
-
-
-
-/***/ },
-/* 10 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var isKind = __webpack_require__(17);
-	    /**
-	     */
-	    var isArray = Array.isArray || function (val) {
-	        return isKind(val, 'Array');
-	    };
-	    module.exports = isArray;
-
-
-
-/***/ },
-/* 11 */
-/***/ function(module, exports, __webpack_require__) {
+/* 16 */
+/***/ function(module, exports) {
 
 	
 
@@ -782,8 +874,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
+/* 17 */
+/***/ function(module, exports) {
 
 	
 
@@ -802,10 +894,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 13 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var forOwn = __webpack_require__(18);
+	var forOwn = __webpack_require__(19);
 	var isArray = __webpack_require__(10);
 
 	    function containsMatch(array, pattern) {
@@ -863,71 +955,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 14 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/**
-	 * @constant Minimum 32-bit signed integer value (-2^31).
-	 */
-
-	    module.exports = -2147483648;
-
-
-
-/***/ },
-/* 15 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/**
-	 * @constant Maximum 32-bit signed integer value. (2^31 - 1)
-	 */
-
-	    module.exports = 2147483647;
-
-
-
-/***/ },
-/* 16 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var random = __webpack_require__(19);
-	var MIN_INT = __webpack_require__(14);
-	var MAX_INT = __webpack_require__(15);
-
-	    /**
-	     * Returns random number inside range
-	     */
-	    function rand(min, max){
-	        min = min == null? MIN_INT : min;
-	        max = max == null? MAX_INT : max;
-	        return min + (max - min) * random();
-	    }
-
-	    module.exports = rand;
-
-
-
-/***/ },
-/* 17 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var kindOf = __webpack_require__(20);
-	    /**
-	     * Check if value is from a specific "kind".
-	     */
-	    function isKind(val, kind){
-	        return kindOf(val) === kind;
-	    }
-	    module.exports = isKind;
-
-
-
-/***/ },
-/* 18 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var hasOwn = __webpack_require__(21);
-	var forIn = __webpack_require__(22);
+	var hasOwn = __webpack_require__(20);
+	var forIn = __webpack_require__(21);
 
 	    /**
 	     * Similar to Array/forEach but works over object properties and fixes Don't
@@ -948,58 +980,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 19 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-
-	    /**
-	     * Just a wrapper to Math.random. No methods inside mout/random should call
-	     * Math.random() directly so we can inject the pseudo-random number
-	     * generator if needed (ie. in case we need a seeded random or a better
-	     * algorithm than the native one)
-	     */
-	    function random(){
-	        return random.get();
-	    }
-
-	    // we expose the method so it can be swapped if needed
-	    random.get = Math.random;
-
-	    module.exports = random;
-
-
-
-
-/***/ },
 /* 20 */
-/***/ function(module, exports, __webpack_require__) {
-
-	
-
-	    var _rKind = /^\[object (.*)\]$/,
-	        _toString = Object.prototype.toString,
-	        UNDEF;
-
-	    /**
-	     * Gets the "kind" of value. (e.g. "String", "Number", etc)
-	     */
-	    function kindOf(val) {
-	        if (val === null) {
-	            return 'Null';
-	        } else if (val === UNDEF) {
-	            return 'Undefined';
-	        } else {
-	            return _rKind.exec( _toString.call(val) )[1];
-	        }
-	    }
-	    module.exports = kindOf;
-
-
-
-/***/ },
-/* 21 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	
 
@@ -1016,10 +998,10 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 22 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var hasOwn = __webpack_require__(21);
+	var hasOwn = __webpack_require__(20);
 
 	    var _hasDontEnumBug,
 	        _dontEnums;
@@ -1094,6 +1076,34 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    module.exports = forIn;
 
+
+
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var makeIterator = __webpack_require__(15);
+
+	    /**
+	     * Array map
+	     */
+	    function map(arr, callback, thisObj) {
+	        callback = makeIterator(callback, thisObj);
+	        var results = [];
+	        if (arr == null){
+	            return results;
+	        }
+
+	        var i = -1, len = arr.length;
+	        while (++i < len) {
+	            results[i] = callback(arr[i], i, arr);
+	        }
+
+	        return results;
+	    }
+
+	     module.exports = map;
 
 
 
