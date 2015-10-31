@@ -60,10 +60,10 @@ module.exports = function (config) {
 
     // the default configuration
     junitReporter: {
-      outputDir: process.env.$CIRCLE_TEST_REPORTS || 'junit', // results will be saved as $outputDir/$browserName.xml
-      outputFile: undefined, // if included, results will be saved as $outputDir/$browserName/$outputFile
-      suite: 'js-data-localstorage', // suite will become the package name attribute in xml testsuite element
-      useBrowserName: false // add browser name to report and classes names
+      outputDir: process.env.CIRCLE_TEST_REPORTS || 'junit',
+      outputFile: undefined,
+      suite: 'js-data-localstorage',
+      useBrowserName: false
     },
 
 		browserStack: {

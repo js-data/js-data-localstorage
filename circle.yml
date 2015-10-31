@@ -3,3 +3,7 @@ dependencies:
     - bower install
   cache_directories:
     - "bower_components"
+general:
+  artifacts:
+    - "dist"
+    - "coverage"
