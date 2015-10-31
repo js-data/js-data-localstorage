@@ -30,7 +30,8 @@ module.exports = function (config) {
 			'karma-phantomjs-launcher',
 			'karma-firefox-launcher',
 			'karma-coverage',
-			'karma-browserstack-launcher'
+			'karma-browserstack-launcher',
+			'karma-junit-reporter'
 		],
 		autoWatch: false,
 		autoWatchBatchDelay: 4000,
@@ -45,7 +46,7 @@ module.exports = function (config) {
 			'test/**/*.js'
 		],
 
-		reporters: ['dots', 'coverage'],
+		reporters: ['dots', 'coverage', 'junit'],
 
 		preprocessors: {
 			'dist/js-data-localstorage.js': ['coverage']
@@ -56,6 +57,14 @@ module.exports = function (config) {
 			type: 'lcov',
 			dir: 'coverage/'
 		},
+
+    // the default configuration
+    junitReporter: {
+      outputDir: process.env.$CIRCLE_TEST_REPORTS || 'junit', // results will be saved as $outputDir/$browserName.xml
+      outputFile: undefined, // if included, results will be saved as $outputDir/$browserName/$outputFile
+      suite: 'js-data-localstorage', // suite will become the package name attribute in xml testsuite element
+      useBrowserName: false // add browser name to report and classes names
+    },
 
 		browserStack: {
 			username: process.env.BROWSERSTACK_USERNAME,

@@ -33,3 +33,4 @@ karma.conf.js
 test/
 lib/
 src/
+junit/
