@@ -4,6 +4,9 @@
 
 localStorage adapter for [js-data](http://www.js-data.io/).
 
+Tested on IE9, Chrome 46, Firefox 41 & Safari 7.1 using
+<img src="https://raw.githubusercontent.com/js-data/js-data-localstorage/master/bs.jpg" alt="bs logo" title="browserstack" width="150" height="35" style="vertical-align: middle" />
+
 ### API Documentation
 [DSLocalStorageAdapter](http://www.js-data.io/docs/dslocalstorageadapter)
 

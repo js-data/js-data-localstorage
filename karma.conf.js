@@ -5,6 +5,27 @@ var customLaunchers = {
 		browser_version: '9.0',
 		os: 'Windows',
 		os_version: '7'
+	},
+	bs_safari7_osxmavericks: {
+		base: 'BrowserStack',
+		browser: 'safari',
+		browser_version: '7.1',
+		os: 'OS X',
+		os_version: 'Mavericks'
+	},
+	bs_firefox41_windows7: {
+		base: 'BrowserStack',
+		browser: 'firefox',
+		browser_version: '41.0',
+		os: 'Windows',
+		os_version: '7'
+	},
+	bs_chrome46_windows7: {
+		base: 'BrowserStack',
+		browser: 'chrome',
+		browser_version: '46.0',
+		os: 'Windows',
+		os_version: '7'
 	}
 };
 
@@ -20,15 +41,11 @@ module.exports = function (config) {
 	config.set({
 		// base path, that will be used to resolve files and exclude
 		basePath: './',
-		frameworks: ['sinon', 'chai', 'mocha'],
+		frameworks: ['mocha'],
 		plugins: [
 			// these plugins will be require() by Karma
-			'karma-sinon',
 			'karma-mocha',
-			'karma-chai',
-			'karma-chrome-launcher',
 			'karma-phantomjs-launcher',
-			'karma-firefox-launcher',
 			'karma-coverage',
 			'karma-browserstack-launcher',
 			'karma-junit-reporter'
@@ -42,8 +59,8 @@ module.exports = function (config) {
 			'node_modules/es6-promise/dist/es6-promise.js',
 			'node_modules/js-data/dist/js-data.js',
 			'dist/js-data-localstorage.js',
-			'karma.start.js',
-			'test/**/*.js'
+			'node_modules/js-data-adapter-tests/dist/js-data-adapter-tests.js',
+			'karma.start.js'
 		],
 
 		reporters: ['dots', 'coverage', 'junit'],
@@ -73,7 +90,7 @@ module.exports = function (config) {
 
 		customLaunchers: customLaunchers,
 
-		browserNoActivityTimeout: 30000,
+		browserNoActivityTimeout: 90000,
 
 		// web server port
 		port: 9876,
@@ -88,7 +105,7 @@ module.exports = function (config) {
 		logLevel: config.LOG_INFO,
 
 		// If browser does not capture in given timeout [ms], kill it
-		captureTimeout: 30000,
+		captureTimeout: 90000,
 
 		// Continuous Integration mode
 		// if true, it capture browsers, run tests and exit

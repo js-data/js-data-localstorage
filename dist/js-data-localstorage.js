@@ -1,6 +1,6 @@
 /*!
 * js-data-localstorage
-* @version 2.1.2 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
+* @version 2.1.3 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
 * @author Jason Dobry <jason.dobry@gmail.com>
 * @copyright (c) 2014-2015 Jason Dobry
 * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
@@ -63,11 +63,13 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+	'use strict';
+
+	var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	/* global: localStorage */
 	var JSData = __webpack_require__(1);
@@ -210,7 +212,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      var instance = undefined;
 	      options = options || {};
-	      options['with'] = options['with'] || [];
+	      options.with = options.with || [];
 	      return new DSUtils.Promise(function (resolve, reject) {
 	        _this.GET(_this.getIdPath(resourceConfig, options || {}, id)).then(function (item) {
 	          return !item ? reject(new Error('Not Found!')) : item;
@@ -222,22 +224,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var relationName = def.relation;
 	            var relationDef = resourceConfig.getResource(relationName);
 	            var containedName = null;
-	            if (DSUtils.contains(options['with'], relationName)) {
+	            if (DSUtils.contains(options.with, relationName)) {
 	              containedName = relationName;
-	            } else if (DSUtils.contains(options['with'], def.localField)) {
+	            } else if (DSUtils.contains(options.with, def.localField)) {
 	              containedName = def.localField;
 	            }
 	            if (containedName) {
 	              (function () {
 	                var __options = DSUtils.deepMixIn({}, options.orig ? options.orig() : options);
-	                __options['with'] = options['with'].slice();
+	                __options.with = options.with.slice();
 	                __options = DSUtils._(relationDef, __options);
-	                DSUtils.remove(__options['with'], containedName);
-	                DSUtils.forEach(__options['with'], function (relation, i) {
+	                DSUtils.remove(__options.with, containedName);
+	                DSUtils.forEach(__options.with, function (relation, i) {
 	                  if (relation && relation.indexOf(containedName) === 0 && relation.length >= containedName.length && relation[containedName.length] === '.') {
-	                    __options['with'][i] = relation.substr(containedName.length + 1);
+	                    __options.with[i] = relation.substr(containedName.length + 1);
 	                  } else {
-	                    __options['with'][i] = '';
+	                    __options.with[i] = '';
 	                  }
 	                });
 
@@ -288,7 +290,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          return DSUtils.Promise.all(tasks);
 	        }).then(function () {
 	          return resolve(instance);
-	        })['catch'](reject);
+	        }).catch(reject);
 	      });
 	    }
 	  }, {
@@ -298,7 +300,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      var items = null;
 	      options = options || {};
-	      options['with'] = options['with'] || [];
+	      options.with = options.with || [];
 	      return new DSUtils.Promise(function (resolve, reject) {
 	        try {
 	          (function () {
@@ -326,22 +328,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	          var relationName = def.relation;
 	          var relationDef = resourceConfig.getResource(relationName);
 	          var containedName = null;
-	          if (DSUtils.contains(options['with'], relationName)) {
+	          if (DSUtils.contains(options.with, relationName)) {
 	            containedName = relationName;
-	          } else if (DSUtils.contains(options['with'], def.localField)) {
+	          } else if (DSUtils.contains(options.with, def.localField)) {
 	            containedName = def.localField;
 	          }
 	          if (containedName) {
 	            (function () {
 	              var __options = DSUtils.deepMixIn({}, options.orig ? options.orig() : options);
-	              __options['with'] = options['with'].slice();
+	              __options.with = options.with.slice();
 	              __options = DSUtils._(relationDef, __options);
-	              DSUtils.remove(__options['with'], containedName);
-	              DSUtils.forEach(__options['with'], function (relation, i) {
+	              DSUtils.remove(__options.with, containedName);
+	              DSUtils.forEach(__options.with, function (relation, i) {
 	                if (relation && relation.indexOf(containedName) === 0 && relation.length >= containedName.length && relation[containedName.length] === '.') {
-	                  __options['with'][i] = relation.substr(containedName.length + 1);
+	                  __options.with[i] = relation.substr(containedName.length + 1);
 	                } else {
-	                  __options['with'][i] = '';
+	                  __options.with[i] = '';
 	                }
 	              });
 
@@ -445,7 +447,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          _this3.PUT(DSUtils.makePath(_this3.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])), DSUtils.omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
 	            _this3.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
 	            resolve(item);
-	          })['catch'](reject);
+	          }).catch(reject);
 	        });
 	      });
 	    }
@@ -460,7 +462,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          _this4.PUT(_this4.getIdPath(resourceConfig, options, id), DSUtils.omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
 	            _this4.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
 	            resolve(item);
-	          })['catch'](reject);
+	          }).catch(reject);
 	        });
 	      });
 	    }
@@ -512,10 +514,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	})();
 
 	DSLocalStorageAdapter.version = {
-	  full: '2.1.2',
+	  full: '2.1.3',
 	  major: parseInt('2', 10),
 	  minor: parseInt('1', 10),
-	  patch: parseInt('2', 10),
+	  patch: parseInt('3', 10),
 	  alpha:  true ? 'false' : false,
 	  beta:  true ? 'false' : false
 	};

@@ -1,3 +1,9 @@
+##### 2.1.3 - 10 November 2015
+
+###### Other
+- Rebuilt with Babel v6
+- CI tests now run on Browserstack
+
 ##### 2.1.2 - 30 October 2015
 
 ###### Other
