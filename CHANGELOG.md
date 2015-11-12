@@ -1,3 +1,8 @@
+##### 2.2.0 - 11 November 2015
+
+###### Backwards compatible API changes
+- Added support for custom storage medium
+
 ##### 2.1.3 - 10 November 2015
 
 ###### Other

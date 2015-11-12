@@ -27,6 +27,32 @@ store.registerAdapter('localstorage', adapter, { default: true });
 // "store" will now use the localstorage adapter for all async operations
 ```
 
+You can also provide a custom storage medium (it just needs to implement the `localStorage` API):
+
+```js
+var memory = {};
+
+// Turn js-data-localstorage into an in-memory adapter
+var memoryAdapter = new DSLocalStorageAdapter({
+  storage: {
+    getItem: function (key) {
+      return memory[key];
+    },
+    setItem: function (key, value) {
+      return memory[key] = value;
+    },
+    removeItem: function (key) {
+      delete memory[key];
+    }
+  }
+});
+
+// Turn js-data-localstorage into a sessionStorage adapter
+var sessionAdapter = new DSLocalStorageAdapter({
+  storage: sessionStorage
+});
+```
+
 ### Changelog
 [CHANGELOG.md](https://github.com/js-data/js-data-localstorage/blob/master/CHANGELOG.md)
 

@@ -55,6 +55,7 @@ class DSLocalStorageAdapter {
   constructor (options) {
     options = options || {}
     this.defaults = new Defaults()
+    this.storage = options.storage || localStorage
     DSUtils.deepMixIn(this.defaults, options)
   }
 
@@ -69,18 +70,18 @@ class DSLocalStorageAdapter {
   getIds (resourceConfig, options) {
     let ids
     let idsPath = this.getPath(resourceConfig, options)
-    let idsJson = localStorage.getItem(idsPath)
+    let idsJson = this.storage.getItem(idsPath)
     if (idsJson) {
       ids = DSUtils.fromJson(idsJson)
     } else {
-      localStorage.setItem(idsPath, DSUtils.toJson({}))
+      this.storage.setItem(idsPath, DSUtils.toJson({}))
       ids = {}
     }
     return ids
   }
 
   saveKeys (ids, resourceConfig, options) {
-    localStorage.setItem(this.getPath(resourceConfig, options), DSUtils.toJson(ids))
+    this.storage.setItem(this.getPath(resourceConfig, options), DSUtils.toJson(ids))
   }
 
   ensureId (id, resourceConfig, options) {
@@ -97,25 +98,25 @@ class DSLocalStorageAdapter {
 
   GET (key) {
     return new DSUtils.Promise(resolve => {
-      let item = localStorage.getItem(key)
+      let item = this.storage.getItem(key)
       resolve(item ? DSUtils.fromJson(item) : undefined)
     })
   }
 
   PUT (key, value) {
     let DSLocalStorageAdapter = this
-    return DSLocalStorageAdapter.GET(key).then(function (item) {
+    return DSLocalStorageAdapter.GET(key).then(item => {
       if (item) {
         DSUtils.deepMixIn(item, DSUtils.removeCircular(value))
       }
-      localStorage.setItem(key, DSUtils.toJson(item || value))
+      this.storage.setItem(key, DSUtils.toJson(item || value))
       return DSLocalStorageAdapter.GET(key)
     })
   }
 
   DEL (key) {
-    return new DSUtils.Promise(function (resolve) {
-      localStorage.removeItem(key)
+    return new DSUtils.Promise(resolve => {
+      this.storage.removeItem(key)
       resolve()
     })
   }
@@ -218,7 +219,7 @@ class DSLocalStorageAdapter {
         let items = []
         let ids = DSUtils.keys(this.getIds(resourceConfig, options))
         DSUtils.forEach(ids, id => {
-          let itemJson = localStorage.getItem(this.getIdPath(resourceConfig, options, id))
+          let itemJson = this.storage.getItem(this.getIdPath(resourceConfig, options, id))
           if (itemJson) {
             items.push(DSUtils.fromJson(itemJson))
           }

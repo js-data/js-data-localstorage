@@ -1,6 +1,6 @@
 /*!
 * js-data-localstorage
-* @version 2.1.3 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
+* @version 2.2.0 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
 * @author Jason Dobry <jason.dobry@gmail.com>
 * @copyright (c) 2014-2015 Jason Dobry
 * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
@@ -131,6 +131,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	    options = options || {};
 	    this.defaults = new Defaults();
+	    this.storage = options.storage || localStorage;
 	    DSUtils.deepMixIn(this.defaults, options);
 	  }
 
@@ -149,11 +150,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function getIds(resourceConfig, options) {
 	      var ids = undefined;
 	      var idsPath = this.getPath(resourceConfig, options);
-	      var idsJson = localStorage.getItem(idsPath);
+	      var idsJson = this.storage.getItem(idsPath);
 	      if (idsJson) {
 	        ids = DSUtils.fromJson(idsJson);
 	      } else {
-	        localStorage.setItem(idsPath, DSUtils.toJson({}));
+	        this.storage.setItem(idsPath, DSUtils.toJson({}));
 	        ids = {};
 	      }
 	      return ids;
@@ -161,7 +162,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'saveKeys',
 	    value: function saveKeys(ids, resourceConfig, options) {
-	      localStorage.setItem(this.getPath(resourceConfig, options), DSUtils.toJson(ids));
+	      this.storage.setItem(this.getPath(resourceConfig, options), DSUtils.toJson(ids));
 	    }
 	  }, {
 	    key: 'ensureId',
@@ -180,41 +181,47 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'GET',
 	    value: function GET(key) {
+	      var _this = this;
+
 	      return new DSUtils.Promise(function (resolve) {
-	        var item = localStorage.getItem(key);
+	        var item = _this.storage.getItem(key);
 	        resolve(item ? DSUtils.fromJson(item) : undefined);
 	      });
 	    }
 	  }, {
 	    key: 'PUT',
 	    value: function PUT(key, value) {
+	      var _this2 = this;
+
 	      var DSLocalStorageAdapter = this;
 	      return DSLocalStorageAdapter.GET(key).then(function (item) {
 	        if (item) {
 	          DSUtils.deepMixIn(item, DSUtils.removeCircular(value));
 	        }
-	        localStorage.setItem(key, DSUtils.toJson(item || value));
+	        _this2.storage.setItem(key, DSUtils.toJson(item || value));
 	        return DSLocalStorageAdapter.GET(key);
 	      });
 	    }
 	  }, {
 	    key: 'DEL',
 	    value: function DEL(key) {
+	      var _this3 = this;
+
 	      return new DSUtils.Promise(function (resolve) {
-	        localStorage.removeItem(key);
+	        _this3.storage.removeItem(key);
 	        resolve();
 	      });
 	    }
 	  }, {
 	    key: 'find',
 	    value: function find(resourceConfig, id, options) {
-	      var _this = this;
+	      var _this4 = this;
 
 	      var instance = undefined;
 	      options = options || {};
 	      options.with = options.with || [];
 	      return new DSUtils.Promise(function (resolve, reject) {
-	        _this.GET(_this.getIdPath(resourceConfig, options || {}, id)).then(function (item) {
+	        _this4.GET(_this4.getIdPath(resourceConfig, options || {}, id)).then(function (item) {
 	          return !item ? reject(new Error('Not Found!')) : item;
 	        }).then(function (_instance) {
 	          instance = _instance;
@@ -246,7 +253,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                var task = undefined;
 
 	                if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {
-	                  task = _this.findAll(resourceConfig.getResource(relationName), {
+	                  task = _this4.findAll(resourceConfig.getResource(relationName), {
 	                    where: _defineProperty({}, def.foreignKey, {
 	                      '==': instance[resourceConfig.idAttribute]
 	                    })
@@ -263,7 +270,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                  var itemKeys = instance[def.localKeys] || [];
 	                  itemKeys = Array.isArray(itemKeys) ? itemKeys : DSUtils.keys(itemKeys);
 	                  localKeys = localKeys.concat(itemKeys || []);
-	                  task = _this.findAll(resourceConfig.getResource(relationName), {
+	                  task = _this4.findAll(resourceConfig.getResource(relationName), {
 	                    where: _defineProperty({}, relationDef.idAttribute, {
 	                      'in': DSUtils.filter(unique(localKeys), function (x) {
 	                        return x;
@@ -274,7 +281,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    return relatedItems;
 	                  });
 	                } else if (def.type === 'belongsTo' || def.type === 'hasOne' && def.localKey) {
-	                  task = _this.find(resourceConfig.getResource(relationName), DSUtils.get(instance, def.localKey), __options).then(function (relatedItem) {
+	                  task = _this4.find(resourceConfig.getResource(relationName), DSUtils.get(instance, def.localKey), __options).then(function (relatedItem) {
 	                    DSUtils.set(instance, def.localField, relatedItem);
 	                    return relatedItem;
 	                  });
@@ -296,7 +303,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'findAll',
 	    value: function findAll(resourceConfig, params, options) {
-	      var _this2 = this;
+	      var _this5 = this;
 
 	      var items = null;
 	      options = options || {};
@@ -309,9 +316,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	              options.allowSimpleWhere = true;
 	            }
 	            var items = [];
-	            var ids = DSUtils.keys(_this2.getIds(resourceConfig, options));
+	            var ids = DSUtils.keys(_this5.getIds(resourceConfig, options));
 	            DSUtils.forEach(ids, function (id) {
-	              var itemJson = localStorage.getItem(_this2.getIdPath(resourceConfig, options, id));
+	              var itemJson = _this5.storage.getItem(_this5.getIdPath(resourceConfig, options, id));
 	              if (itemJson) {
 	                items.push(DSUtils.fromJson(itemJson));
 	              }
@@ -350,7 +357,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	              var task = undefined;
 
 	              if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {
-	                task = _this2.findAll(resourceConfig.getResource(relationName), {
+	                task = _this5.findAll(resourceConfig.getResource(relationName), {
 	                  where: _defineProperty({}, def.foreignKey, {
 	                    'in': DSUtils.filter(map(items, function (item) {
 	                      return DSUtils.get(item, resourceConfig.idAttribute);
@@ -382,7 +389,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    itemKeys = Array.isArray(itemKeys) ? itemKeys : DSUtils.keys(itemKeys);
 	                    localKeys = localKeys.concat(itemKeys || []);
 	                  });
-	                  task = _this2.findAll(resourceConfig.getResource(relationName), {
+	                  task = _this5.findAll(resourceConfig.getResource(relationName), {
 	                    where: _defineProperty({}, relationDef.idAttribute, {
 	                      'in': DSUtils.filter(unique(localKeys), function (x) {
 	                        return x;
@@ -404,7 +411,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                  });
 	                })();
 	              } else if (def.type === 'belongsTo' || def.type === 'hasOne' && def.localKey) {
-	                task = _this2.findAll(resourceConfig.getResource(relationName), {
+	                task = _this5.findAll(resourceConfig.getResource(relationName), {
 	                  where: _defineProperty({}, relationDef.idAttribute, {
 	                    'in': DSUtils.filter(map(items, function (item) {
 	                      return DSUtils.get(item, def.localKey);
@@ -438,14 +445,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'create',
 	    value: function create(resourceConfig, attrs, options) {
-	      var _this3 = this;
+	      var _this6 = this;
 
 	      return createTask(function (resolve, reject) {
 	        queueTask(function () {
 	          attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid();
 	          options = options || {};
-	          _this3.PUT(DSUtils.makePath(_this3.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])), DSUtils.omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
-	            _this3.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
+	          _this6.PUT(DSUtils.makePath(_this6.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])), DSUtils.omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
+	            _this6.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
 	            resolve(item);
 	          }).catch(reject);
 	        });
@@ -454,13 +461,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'update',
 	    value: function update(resourceConfig, id, attrs, options) {
-	      var _this4 = this;
+	      var _this7 = this;
 
 	      return createTask(function (resolve, reject) {
 	        queueTask(function () {
 	          options = options || {};
-	          _this4.PUT(_this4.getIdPath(resourceConfig, options, id), DSUtils.omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
-	            _this4.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
+	          _this7.PUT(_this7.getIdPath(resourceConfig, options, id), DSUtils.omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
+	            _this7.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
 	            resolve(item);
 	          }).catch(reject);
 	        });
@@ -469,12 +476,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'updateAll',
 	    value: function updateAll(resourceConfig, attrs, params, options) {
-	      var _this5 = this;
+	      var _this8 = this;
 
 	      return this.findAll(resourceConfig, params, options).then(function (items) {
 	        var tasks = [];
 	        DSUtils.forEach(items, function (item) {
-	          return tasks.push(_this5.update(resourceConfig, item[resourceConfig.idAttribute], DSUtils.omit(attrs, resourceConfig.relationFields || []), options));
+	          return tasks.push(_this8.update(resourceConfig, item[resourceConfig.idAttribute], DSUtils.omit(attrs, resourceConfig.relationFields || []), options));
 	        });
 	        return DSUtils.Promise.all(tasks);
 	      });
@@ -482,13 +489,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'destroy',
 	    value: function destroy(resourceConfig, id, options) {
-	      var _this6 = this;
+	      var _this9 = this;
 
 	      return createTask(function (resolve, reject) {
 	        queueTask(function () {
 	          options = options || {};
-	          _this6.DEL(_this6.getIdPath(resourceConfig, options, id)).then(function () {
-	            return _this6.removeId(id, resourceConfig.name, options);
+	          _this9.DEL(_this9.getIdPath(resourceConfig, options, id)).then(function () {
+	            return _this9.removeId(id, resourceConfig.name, options);
 	          }).then(function () {
 	            return resolve(null);
 	          }, reject);
@@ -498,12 +505,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'destroyAll',
 	    value: function destroyAll(resourceConfig, params, options) {
-	      var _this7 = this;
+	      var _this10 = this;
 
 	      return this.findAll(resourceConfig, params, options).then(function (items) {
 	        var tasks = [];
 	        DSUtils.forEach(items, function (item) {
-	          return tasks.push(_this7.destroy(resourceConfig, item[resourceConfig.idAttribute], options));
+	          return tasks.push(_this10.destroy(resourceConfig, item[resourceConfig.idAttribute], options));
 	        });
 	        return DSUtils.Promise.all(tasks);
 	      });
@@ -514,10 +521,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	})();
 
 	DSLocalStorageAdapter.version = {
-	  full: '2.1.3',
+	  full: '2.2.0',
 	  major: parseInt('2', 10),
-	  minor: parseInt('1', 10),
-	  patch: parseInt('3', 10),
+	  minor: parseInt('2', 10),
+	  patch: parseInt('0', 10),
 	  alpha:  true ? 'false' : false,
 	  beta:  true ? 'false' : false
 	};
