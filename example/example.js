@@ -1,21 +1,15 @@
 (function () {
   angular.module('localStorage-example', ['js-data'])
-    .factory('store', function () {
-      var store = new JSData.DS();
-
-      store.registerAdapter('localstorage', new DSLocalStorageAdapter(), { default: true });
-
-      return store;
+    .run(function (DS, DSLocalStorageAdapter) {
+      DS.registerAdapter('ls', DSLocalStorageAdapter, { default: true });
     })
-    .factory('User', function (store) {
-      return store.defineResource('user');
+    .factory('User', function (DS) {
+      return DS.defineResource('user');
     })
     .controller('localStorageCtrl', function ($scope, $timeout, User) {
       var lsCtrl = this;
 
-      User.findAll().then(function (users) {
-        $scope.users = users;
-      });
+      User.findAll();
 
       User.bindAll({}, $scope, 'users');
 

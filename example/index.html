@@ -6,10 +6,9 @@
   <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
   <link href="./example.css" rel="stylesheet">
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.25/angular.min.js"></script>
-  <script src="https://github.com/js-data/js-data/releases/download/1.2.0/js-data.min.js"></script>
-  <script src="https://github.com/js-data/js-data-angular/releases/download/2.1.0/js-data-angular.min.js"></script>
-  <script
-    src="https://github.com/js-data/js-data-localstorage/releases/download/1.0.0/js-data-localstorage.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-data/2.8.2/js-data.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-data-angular/3.1.0/js-data-angular.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-data-localstorage/2.1.3/js-data-localstorage.min.js"></script>
   <script src="./example.js"></script>
 </head>
 <body data-ng-controller="localStorageCtrl as lsCtrl">
@@ -56,22 +55,16 @@
   <div>
 <pre><code>
 angular.module('localStorage-example', ['js-data'])
-  .factory('store', function () {
-    var store = new JSData.DS();
-
-    store.registerAdapter('localstorage', new DSLocalStorageAdapter(), { default: true });
-
-    return store;
+  .run(function (DS, DSLocalStorageAdapter) {
+    DS.registerAdapter('ls', DSLocalStorageAdapter, { default: true });
   })
-  .factory('User', function (store) {
-    return store.defineResource('user');
+  .factory('User', function (DS) {
+    return DS.defineResource('user');
   })
   .controller('localStorageCtrl', function ($scope, $timeout, User) {
     var lsCtrl = this;
 
-    User.findAll().then(function (users) {
-      $scope.users = users;
-    });
+    User.findAll();
 
     User.bindAll({}, $scope, 'users');
 
