@@ -1,3 +1,12 @@
+/*!
+* js-data-localstorage
+* @version 2.3.1 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
+* @author Jason Dobry <jason.dobry@gmail.com>
+* @copyright (c) 2014-2015 Jason Dobry
+* @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
+*
+* @overview localStorage adapter for js-data.
+*/
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("js-data"));
@@ -555,12 +564,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	})();
 
 	DSLocalStorageAdapter.version = {
-	  full: '<%= pkg.version %>',
-	  major: parseInt('<%= major %>', 10),
-	  minor: parseInt('<%= minor %>', 10),
-	  patch: parseInt('<%= patch %>', 10),
-	  alpha:  true ? '<%= alpha %>' : false,
-	  beta:  true ? '<%= beta %>' : false
+	  full: '2.3.1',
+	  major: parseInt('2', 10),
+	  minor: parseInt('3', 10),
+	  patch: parseInt('1', 10),
+	  alpha:  true ? 'false' : false,
+	  beta:  true ? 'false' : false
 	};
 
 	module.exports = DSLocalStorageAdapter;

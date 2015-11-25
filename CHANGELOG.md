@@ -3,6 +3,10 @@
 ###### Backwards compatible API changes
 - Added a createMany method
 
+###### Backwards compatible bug fixes
+- #14 - Id clean-up
+- #15, #15 - Performance
+
 ##### 2.2.0 - 11 November 2015
 
 ###### Backwards compatible API changes
