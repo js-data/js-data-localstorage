@@ -1,3 +1,8 @@
+##### 2.3.0 - 24 November 2015
+
+###### Backwards compatible API changes
+- Added a createMany method
+
 ##### 2.2.0 - 11 November 2015
 
 ###### Backwards compatible API changes

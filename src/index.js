@@ -5,7 +5,7 @@ let unique = require('mout/array/unique')
 let map = require('mout/array/map')
 
 let emptyStore = new JSData.DS()
-let { DSUtils } = JSData
+let {DSUtils} = JSData
 let filter = emptyStore.defaults.defaultFilter
 
 class Defaults {
@@ -60,17 +60,19 @@ class DSLocalStorageAdapter {
   }
 
   getPath (resourceConfig, options) {
+    options = options || {}
     return DSUtils.makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.name)
   }
 
   getIdPath (resourceConfig, options, id) {
+    options = options || {}
     return DSUtils.makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.endpoint, id)
   }
 
   getIds (resourceConfig, options) {
     let ids
-    let idsPath = this.getPath(resourceConfig, options)
-    let idsJson = this.storage.getItem(idsPath)
+    const idsPath = this.getPath(resourceConfig, options)
+    const idsJson = this.storage.getItem(idsPath)
     if (idsJson) {
       ids = DSUtils.fromJson(idsJson)
     } else {
@@ -85,14 +87,32 @@ class DSLocalStorageAdapter {
   }
 
   ensureId (id, resourceConfig, options) {
-    let ids = this.getIds(resourceConfig, options)
-    ids[id] = 1
+    const ids = this.getIds(resourceConfig, options)
+    if (DSUtils.isArray(id)) {
+      if (!id.length) {
+        return
+      }
+      DSUtils.forEach(id, function (_id) {
+        ids[_id] = 1
+      })
+    } else {
+      ids[id] = 1
+    }
     this.saveKeys(ids, resourceConfig, options)
   }
 
   removeId (id, resourceConfig, options) {
-    let ids = this.getIds(resourceConfig, options)
-    delete ids[id]
+    const ids = this.getIds(resourceConfig, options)
+    if (DSUtils.isArray(id)) {
+      if (!id.length) {
+        return
+      }
+      DSUtils.forEach(id, function (_id) {
+        delete ids[_id]
+      })
+    } else {
+      delete ids[id]
+    }
     this.saveKeys(ids, resourceConfig, options)
   }
 
@@ -349,6 +369,26 @@ class DSLocalStorageAdapter {
     })
   }
 
+  createMany (resourceConfig, items, options) {
+    return createTask((resolve, reject) => {
+      queueTask(() => {
+        const tasks = []
+        const ids = []
+        DSUtils.forEach(items, attrs => {
+          const id = attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid()
+          ids.push(id)
+          options = options || {}
+          tasks.push(this.PUT(
+            DSUtils.makePath(this.getIdPath(resourceConfig, options, id)),
+            DSUtils.omit(attrs, resourceConfig.relationFields || [])
+          ))
+        })
+        this.ensureId(ids, resourceConfig, options)
+        return DSUtils.Promise.all(tasks).then(resolve).catch(reject)
+      })
+    })
+  }
+
   update (resourceConfig, id, attrs, options) {
     return createTask((resolve, reject) => {
       queueTask(() => {
@@ -363,7 +403,7 @@ class DSLocalStorageAdapter {
 
   updateAll (resourceConfig, attrs, params, options) {
     return this.findAll(resourceConfig, params, options).then(items => {
-      let tasks = []
+      const tasks = []
       DSUtils.forEach(items, item => tasks.push(this.update(resourceConfig, item[resourceConfig.idAttribute], DSUtils.omit(attrs, resourceConfig.relationFields || []), options)))
       return DSUtils.Promise.all(tasks)
     })
@@ -374,7 +414,7 @@ class DSLocalStorageAdapter {
       queueTask(() => {
         options = options || {}
         this.DEL(this.getIdPath(resourceConfig, options, id))
-          .then(() => this.removeId(id, resourceConfig.name, options))
+          .then(() => this.removeId(id, resourceConfig, options))
           .then(() => resolve(null), reject)
       })
     })
@@ -382,9 +422,14 @@ class DSLocalStorageAdapter {
 
   destroyAll (resourceConfig, params, options) {
     return this.findAll(resourceConfig, params, options).then(items => {
-      let tasks = []
-      DSUtils.forEach(items, item => tasks.push(this.destroy(resourceConfig, item[resourceConfig.idAttribute], options)))
-      return DSUtils.Promise.all(tasks)
+      const ids = []
+      DSUtils.forEach(items, item => {
+        const id = item[resourceConfig.idAttribute]
+        ids.push(id)
+        this.storage.removeItem(this.getIdPath(resourceConfig, options, id))
+      })
+      this.removeId(ids, resourceConfig, options)
+      return ids
     })
   }
 }

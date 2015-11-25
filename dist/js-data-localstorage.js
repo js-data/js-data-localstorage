@@ -1,12 +1,3 @@
-/*!
-* js-data-localstorage
-* @version 2.2.0 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
-* @author Jason Dobry <jason.dobry@gmail.com>
-* @copyright (c) 2014-2015 Jason Dobry
-* @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
-*
-* @overview localStorage adapter for js-data.
-*/
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("js-data"));
@@ -138,11 +129,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  _createClass(DSLocalStorageAdapter, [{
 	    key: 'getPath',
 	    value: function getPath(resourceConfig, options) {
+	      options = options || {};
 	      return DSUtils.makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.name);
 	    }
 	  }, {
 	    key: 'getIdPath',
 	    value: function getIdPath(resourceConfig, options, id) {
+	      options = options || {};
 	      return DSUtils.makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.endpoint, id);
 	    }
 	  }, {
@@ -168,14 +161,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	    key: 'ensureId',
 	    value: function ensureId(id, resourceConfig, options) {
 	      var ids = this.getIds(resourceConfig, options);
-	      ids[id] = 1;
+	      if (DSUtils.isArray(id)) {
+	        if (!id.length) {
+	          return;
+	        }
+	        DSUtils.forEach(id, function (_id) {
+	          ids[_id] = 1;
+	        });
+	      } else {
+	        ids[id] = 1;
+	      }
 	      this.saveKeys(ids, resourceConfig, options);
 	    }
 	  }, {
 	    key: 'removeId',
 	    value: function removeId(id, resourceConfig, options) {
 	      var ids = this.getIds(resourceConfig, options);
-	      delete ids[id];
+	      if (DSUtils.isArray(id)) {
+	        if (!id.length) {
+	          return;
+	        }
+	        DSUtils.forEach(id, function (_id) {
+	          delete ids[_id];
+	        });
+	      } else {
+	        delete ids[id];
+	      }
 	      this.saveKeys(ids, resourceConfig, options);
 	    }
 	  }, {
@@ -459,15 +470,35 @@ return /******/ (function(modules) { // webpackBootstrap
 	      });
 	    }
 	  }, {
-	    key: 'update',
-	    value: function update(resourceConfig, id, attrs, options) {
+	    key: 'createMany',
+	    value: function createMany(resourceConfig, items, options) {
 	      var _this7 = this;
 
 	      return createTask(function (resolve, reject) {
 	        queueTask(function () {
+	          var tasks = [];
+	          var ids = [];
+	          DSUtils.forEach(items, function (attrs) {
+	            var id = attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid();
+	            ids.push(id);
+	            options = options || {};
+	            tasks.push(_this7.PUT(DSUtils.makePath(_this7.getIdPath(resourceConfig, options, id)), DSUtils.omit(attrs, resourceConfig.relationFields || [])));
+	          });
+	          _this7.ensureId(ids, resourceConfig, options);
+	          return DSUtils.Promise.all(tasks).then(resolve).catch(reject);
+	        });
+	      });
+	    }
+	  }, {
+	    key: 'update',
+	    value: function update(resourceConfig, id, attrs, options) {
+	      var _this8 = this;
+
+	      return createTask(function (resolve, reject) {
+	        queueTask(function () {
 	          options = options || {};
-	          _this7.PUT(_this7.getIdPath(resourceConfig, options, id), DSUtils.omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
-	            _this7.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
+	          _this8.PUT(_this8.getIdPath(resourceConfig, options, id), DSUtils.omit(attrs, resourceConfig.relationFields || [])).then(function (item) {
+	            _this8.ensureId(item[resourceConfig.idAttribute], resourceConfig, options);
 	            resolve(item);
 	          }).catch(reject);
 	        });
@@ -476,12 +507,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'updateAll',
 	    value: function updateAll(resourceConfig, attrs, params, options) {
-	      var _this8 = this;
+	      var _this9 = this;
 
 	      return this.findAll(resourceConfig, params, options).then(function (items) {
 	        var tasks = [];
 	        DSUtils.forEach(items, function (item) {
-	          return tasks.push(_this8.update(resourceConfig, item[resourceConfig.idAttribute], DSUtils.omit(attrs, resourceConfig.relationFields || []), options));
+	          return tasks.push(_this9.update(resourceConfig, item[resourceConfig.idAttribute], DSUtils.omit(attrs, resourceConfig.relationFields || []), options));
 	        });
 	        return DSUtils.Promise.all(tasks);
 	      });
@@ -489,13 +520,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'destroy',
 	    value: function destroy(resourceConfig, id, options) {
-	      var _this9 = this;
+	      var _this10 = this;
 
 	      return createTask(function (resolve, reject) {
 	        queueTask(function () {
 	          options = options || {};
-	          _this9.DEL(_this9.getIdPath(resourceConfig, options, id)).then(function () {
-	            return _this9.removeId(id, resourceConfig.name, options);
+	          _this10.DEL(_this10.getIdPath(resourceConfig, options, id)).then(function () {
+	            return _this10.removeId(id, resourceConfig, options);
 	          }).then(function () {
 	            return resolve(null);
 	          }, reject);
@@ -505,14 +536,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'destroyAll',
 	    value: function destroyAll(resourceConfig, params, options) {
-	      var _this10 = this;
+	      var _this11 = this;
 
 	      return this.findAll(resourceConfig, params, options).then(function (items) {
-	        var tasks = [];
+	        var ids = [];
 	        DSUtils.forEach(items, function (item) {
-	          return tasks.push(_this10.destroy(resourceConfig, item[resourceConfig.idAttribute], options));
+	          var id = item[resourceConfig.idAttribute];
+	          ids.push(id);
+	          _this11.storage.removeItem(_this11.getIdPath(resourceConfig, options, id));
 	        });
-	        return DSUtils.Promise.all(tasks);
+	        _this11.removeId(ids, resourceConfig, options);
+	        return ids;
 	      });
 	    }
 	  }]);
@@ -521,12 +555,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	})();
 
 	DSLocalStorageAdapter.version = {
-	  full: '2.2.0',
-	  major: parseInt('2', 10),
-	  minor: parseInt('2', 10),
-	  patch: parseInt('0', 10),
-	  alpha:  true ? 'false' : false,
-	  beta:  true ? 'false' : false
+	  full: '<%= pkg.version %>',
+	  major: parseInt('<%= major %>', 10),
+	  minor: parseInt('<%= minor %>', 10),
+	  patch: parseInt('<%= patch %>', 10),
+	  alpha:  true ? '<%= alpha %>' : false,
+	  beta:  true ? '<%= beta %>' : false
 	};
 
 	module.exports = DSLocalStorageAdapter;
