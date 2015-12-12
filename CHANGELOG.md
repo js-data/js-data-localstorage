@@ -1,3 +1,8 @@
+##### 2.3.2 - 12 December 2015
+
+###### Backwards compatible bug fixes
+- #17 - Id map clean-up
+
 ##### 2.3.0 - 24 November 2015
 
 ###### Backwards compatible API changes

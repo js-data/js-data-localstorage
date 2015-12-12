@@ -76,14 +76,18 @@ class DSLocalStorageAdapter {
     if (idsJson) {
       ids = DSUtils.fromJson(idsJson)
     } else {
-      this.storage.setItem(idsPath, DSUtils.toJson({}))
       ids = {}
     }
     return ids
   }
 
   saveKeys (ids, resourceConfig, options) {
-    this.storage.setItem(this.getPath(resourceConfig, options), DSUtils.toJson(ids))
+    const idsPath = this.getPath(resourceConfig, options)
+    if (!DSUtils.isEmpty(ids)) {
+      this.storage.setItem(idsPath, DSUtils.toJson(ids))
+    } else {
+      this.storage.removeItem(idsPath)
+    }
   }
 
   ensureId (id, resourceConfig, options) {

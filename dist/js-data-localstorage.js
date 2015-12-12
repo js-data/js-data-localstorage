@@ -1,6 +1,6 @@
 /*!
 * js-data-localstorage
-* @version 2.3.1 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
+* @version 2.3.2 - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>
 * @author Jason Dobry <jason.dobry@gmail.com>
 * @copyright (c) 2014-2015 Jason Dobry
 * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
@@ -156,7 +156,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (idsJson) {
 	        ids = DSUtils.fromJson(idsJson);
 	      } else {
-	        this.storage.setItem(idsPath, DSUtils.toJson({}));
 	        ids = {};
 	      }
 	      return ids;
@@ -164,7 +163,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'saveKeys',
 	    value: function saveKeys(ids, resourceConfig, options) {
-	      this.storage.setItem(this.getPath(resourceConfig, options), DSUtils.toJson(ids));
+	      var idsPath = this.getPath(resourceConfig, options);
+	      if (!DSUtils.isEmpty(ids)) {
+	        this.storage.setItem(idsPath, DSUtils.toJson(ids));
+	      } else {
+	        this.storage.removeItem(idsPath);
+	      }
 	    }
 	  }, {
 	    key: 'ensureId',
@@ -564,10 +568,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	})();
 
 	DSLocalStorageAdapter.version = {
-	  full: '2.3.1',
+	  full: '2.3.2',
 	  major: parseInt('2', 10),
 	  minor: parseInt('3', 10),
-	  patch: parseInt('1', 10),
+	  patch: parseInt('2', 10),
 	  alpha:  true ? 'false' : false,
 	  beta:  true ? 'false' : false
 	};
