@@ -3,9 +3,9 @@ var pkg = require('../package.json');
 
 var banner = '/*!\n' +
   '* js-data-localstorage\n' +
-  '* @version ' + pkg.version + ' - Homepage <http://www.js-data.io/docs/dslocalstorageadapter>\n' +
+  '* @version ' + pkg.version + ' - Homepage <https://github.com/js-data/js-data-localstorage>\n' +
   '* @author Jason Dobry <jason.dobry@gmail.com>\n' +
-  '* @copyright (c) 2014-2015 Jason Dobry\n' +
+  '* @copyright (c) 2014-2016 Jason Dobry\n' +
   '* @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>\n' +
   '*\n' +
   '* @overview localStorage adapter for js-data.\n' +

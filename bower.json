@@ -1,7 +1,7 @@
 {
   "name": "js-data-localstorage",
   "description": "localStorage adapter for js-data.",
-  "homepage": "http://www.js-data.io/docs/dslocalstorageadapter",
+  "homepage": "http://www.js-data.io/docs/js-data-localstorage",
   "repository": {
     "type": "git",
     "url": "https://github.com/js-data/js-data-localstorage.git"
@@ -17,11 +17,9 @@
     ".*",
     "*.iml",
     "src/",
-    "lib/",
     "doc/",
-    "guide/",
+    "junit/",
     "coverage/",
-    "Gruntfile.js",
     "node_modules/",
     "test/",
     "package.json",
@@ -29,6 +27,6 @@
     "karma.start.js"
   ],
   "dependencies": {
-    "js-data": "~2.x"
+    "js-data": "~3.x"
   }
 }

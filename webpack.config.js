@@ -1,9 +1,14 @@
+var path = require('path')
+
 module.exports = {
-  entry: './src/index.js',
+  devtool: 'source-map',
+  entry: {
+    './dist/js-data-localstorage.js': './src/index.js'
+  },
   output: {
-    filename: './dist/js-data-localstorage.js',
+    filename: '[name]',
     libraryTarget: 'umd',
-    library: 'DSLocalStorageAdapter'
+    library: 'LocalStorageAdapter'
   },
   externals: {
     'js-data': {
@@ -16,13 +21,12 @@ module.exports = {
   module: {
     loaders: [
       {
-        test: /(src)(.+)\.js$/,
-        exclude: /(node_modules|bower_components)/,
-        loader: 'babel',
-        query: {
-          presets: ['es2015']
-        }
+        loader: 'babel-loader',
+        include: [
+          path.resolve(__dirname, 'src')
+        ],
+        test: /\.js$/
       }
     ]
   }
-};
+}

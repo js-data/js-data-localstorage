@@ -20,17 +20,15 @@ bower_components/
 
 *.iml
 .idea/
-
+bs.jpg
 *.png
 CONTRIBUTING.md
 favicon.ico
 circle.yml
 bower.json
-.bowerrc
-Gruntfile.js
 *.start.js
 karma.conf.js
 test/
-lib/
 src/
 junit/
+doc/

@@ -1,19 +1,52 @@
 /* global: localStorage */
-let JSData = require('js-data')
-let guid = require('mout/random/guid')
-let unique = require('mout/array/unique')
-let map = require('mout/array/map')
+const JSData = require('js-data')
+const guid = require('mout/random/guid')
 
-let emptyStore = new JSData.DS()
-let {DSUtils} = JSData
-let filter = emptyStore.defaults.defaultFilter
+const {
+  Query,
+  utils
+} = JSData
 
-class Defaults {
+const {
+  addHiddenPropsToTarget,
+  copy,
+  deepMixIn,
+  extend,
+  fillIn,
+  forOwn,
+  fromJson,
+  get,
+  isArray,
+  isUndefined,
+  resolve,
+  reject,
+  set,
+  toJson
+} = utils
 
+function isValidString (value) {
+  return (value != null && value !== '')
 }
-
-Defaults.prototype.basePath = ''
-
+function join (items, separator) {
+  separator || (separator = '')
+  return items.filter(isValidString).join(separator)
+}
+function makePath (...args) {
+  let result = join(args, '/')
+  return result.replace(/([^:\/]|^)\/{2,}/g, '$1/')
+}
+function unique (array) {
+  const seen = {}
+  const final = []
+  array.forEach(function (item) {
+    if (item in seen) {
+      return
+    }
+    final.push(item)
+    seen[item] = 0
+  })
+  return final
+}
 let queue = []
 let taskInProcess = false
 
@@ -38,407 +71,1044 @@ function queueTask (task) {
 }
 
 function createTask (fn) {
-  return new DSUtils.Promise(fn).then(result => {
+  return new Promise(fn).then(function (result) {
     taskInProcess = false
     queue.shift()
     setTimeout(dequeue, 0)
     return result
-  }, err => {
+  }, function (err) {
     taskInProcess = false
     queue.shift()
     setTimeout(dequeue, 0)
-    return DSUtils.Promise.reject(err)
+    return reject(err)
   })
 }
 
-class DSLocalStorageAdapter {
-  constructor (options) {
-    options = options || {}
-    this.defaults = new Defaults()
-    this.storage = options.storage || localStorage
-    DSUtils.deepMixIn(this.defaults, options)
-  }
+const noop = function (...args) {
+  const self = this
+  const opts = args[args.length - 1]
+  self.dbg(opts.op, ...args)
+  return resolve()
+}
 
-  getPath (resourceConfig, options) {
-    options = options || {}
-    return DSUtils.makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.name)
-  }
+const noop2 = function (...args) {
+  const self = this
+  const opts = args[args.length - 2]
+  self.dbg(opts.op, ...args)
+  return resolve()
+}
 
-  getIdPath (resourceConfig, options, id) {
-    options = options || {}
-    return DSUtils.makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.endpoint, id)
-  }
+const DEFAULTS = {
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#basePath
+   * @type {string}
+   */
+  basePath: '',
 
-  getIds (resourceConfig, options) {
-    let ids
-    const idsPath = this.getPath(resourceConfig, options)
-    const idsJson = this.storage.getItem(idsPath)
-    if (idsJson) {
-      ids = DSUtils.fromJson(idsJson)
-    } else {
-      ids = {}
-    }
-    return ids
-  }
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#debug
+   * @type {boolean}
+   * @default false
+   */
+  debug: false,
 
-  saveKeys (ids, resourceConfig, options) {
-    const idsPath = this.getPath(resourceConfig, options)
-    if (!DSUtils.isEmpty(ids)) {
-      this.storage.setItem(idsPath, DSUtils.toJson(ids))
-    } else {
-      this.storage.removeItem(idsPath)
-    }
-  }
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#storage
+   * @type {Object}
+   * @default localStorage
+   */
+  storage: localStorage
+}
 
-  ensureId (id, resourceConfig, options) {
-    const ids = this.getIds(resourceConfig, options)
-    if (DSUtils.isArray(id)) {
+/**
+ * LocalStorageAdapter class.
+ *
+ * @example
+ * import {DataStore} from 'js-data'
+ * import LocalStorageAdapter from 'js-data-localstorage'
+ * const store = new DataStore()
+ * const adapter = new LocalStorageAdapter()
+ * store.registerAdapter('ls', adapter, { 'default': true })
+ *
+ * @class LocalStorageAdapter
+ * @param {Object} [opts] Configuration opts.
+ * @param {string} [opts.basePath=''] TODO
+ * @param {boolean} [opts.debug=false] TODO
+ * @param {Object} [opts.storeage=localStorage] TODO
+ */
+function LocalStorageAdapter (opts) {
+  fillIn(this, opts || {})
+  fillIn(this, DEFAULTS)
+}
+
+/**
+ * Alternative to ES6 class syntax for extending `LocalStorageAdapter`.
+ *
+ * @name LocalStorageAdapter.extend
+ * @method
+ * @param {Object} [instanceProps] Properties that will be added to the
+ * prototype of the subclass.
+ * @param {Object} [classProps] Properties that will be added as static
+ * properties to the subclass itself.
+ * @return {Object} Subclass of `LocalStorageAdapter`.
+ */
+LocalStorageAdapter.extend = extend
+
+addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
+  /**
+   * @name LocalStorageAdapter#afterCreate
+   * @method
+   */
+  afterCreate: noop2,
+
+  /**
+   * @name LocalStorageAdapter#afterCreateMany
+   * @method
+   */
+  afterCreateMany: noop2,
+
+  /**
+   * @name LocalStorageAdapter#afterDEL
+   * @method
+   */
+  afterDEL: noop2,
+
+  /**
+   * @name LocalStorageAdapter#afterDestroy
+   * @method
+   */
+  afterDestroy: noop2,
+
+  /**
+   * @name LocalStorageAdapter#afterDestroyAll
+   * @method
+   */
+  afterDestroyAll: noop2,
+
+  /**
+   * @name LocalStorageAdapter#afterFind
+   * @method
+   */
+  afterFind: noop2,
+
+  /**
+   * @name LocalStorageAdapter#afterFindAll
+   * @method
+   */
+  afterFindAll: noop2,
+
+  /**
+   * @name LocalStorageAdapter#afterGET
+   * @method
+   */
+  afterGET: noop2,
+
+  /**
+   * @name LocalStorageAdapter#afterPUT
+   * @method
+   */
+  afterPUT: noop2,
+
+  /**
+   * @name LocalStorageAdapter#afterUpdate
+   * @method
+   */
+  afterUpdate: noop2,
+
+  /**
+   * @name LocalStorageAdapter#afterUpdateAll
+   * @method
+   */
+  afterUpdateAll: noop2,
+
+  /**
+   * @name LocalStorageAdapter#afterUpdateMany
+   * @method
+   */
+  afterUpdateMany: noop2,
+
+  /**
+   * @name LocalStorageAdapter#beforeCreate
+   * @method
+   */
+  beforeCreate: noop,
+
+  /**
+   * @name LocalStorageAdapter#beforeCreateMany
+   * @method
+   */
+  beforeCreateMany: noop,
+
+  /**
+   * @name LocalStorageAdapter#beforeDEL
+   * @method
+   */
+  beforeDEL: noop,
+
+  /**
+   * @name LocalStorageAdapter#beforeDestroy
+   * @method
+   */
+  beforeDestroy: noop,
+
+  /**
+   * @name LocalStorageAdapter#beforeDestroyAll
+   * @method
+   */
+  beforeDestroyAll: noop,
+
+  /**
+   * @name LocalStorageAdapter#beforeFind
+   * @method
+   */
+  beforeFind: noop,
+
+  /**
+   * @name LocalStorageAdapter#beforeFindAll
+   * @method
+   */
+  beforeFindAll: noop,
+
+  /**
+   * @name LocalStorageAdapter#beforeGET
+   * @method
+   */
+  beforeGET: noop,
+
+  /**
+   * @name LocalStorageAdapter#beforePUT
+   * @method
+   */
+  beforePUT: noop,
+
+  /**
+   * @name LocalStorageAdapter#beforeUpdate
+   * @method
+   */
+  beforeUpdate: noop,
+
+  /**
+   * @name LocalStorageAdapter#beforeUpdateAll
+   * @method
+   */
+  beforeUpdateAll: noop,
+
+  /**
+   * @name LocalStorageAdapter#beforeUpdateMany
+   * @method
+   */
+  beforeUpdateMany: noop,
+
+  /**
+   * Create a new record.
+   *
+   * @name LocalStorageAdapter#create
+   * @method
+   * @param {Object} mapper The mapper.
+   * @param {Object} props The record to be created.
+   * @param {Object} [opts] Configuration options.
+   * @param {boolean} [opts.raw=false] TODO
+   * @return {Promise}
+   */
+  create (mapper, props, opts) {
+    const self = this
+    props || (props = {})
+    opts || (opts = {})
+
+    return createTask(function (success, failure) {
+      queueTask(function () {
+        let op
+        // beforeCreate lifecycle hook
+        op = opts.op = 'beforeCreate'
+        return resolve(self[op](mapper, props, opts)).then(function (_props) {
+          // Allow for re-assignment from lifecycle hook
+          let record = isUndefined(_props) ? props : _props
+          const id = get(record, mapper.idAttribute) || guid()
+          set(record, mapper.idAttribute, id)
+          const key = self.getIdPath(mapper, opts, id)
+
+          // Create the record
+          // TODO: Create related records when the "with" option is provided
+          self.storage.setItem(key, toJson(record))
+          self.ensureId(id, mapper, opts)
+
+          // afterCreate lifecycle hook
+          op = opts.op = 'afterCreate'
+          return self[op](mapper, props, opts, record).then(function (_record) {
+            // Allow for re-assignment from lifecycle hook
+            record = isUndefined(_record) ? record : _record
+            return opts.raw ? {
+              data: record,
+              created: 1
+            } : record
+          })
+        }).then(success, failure)
+      })
+    })
+  },
+
+  /**
+   * Create multiple records in a single batch.
+   *
+   * @name LocalStorageAdapter#createMany
+   * @method
+   * @param {Object} mapper The mapper.
+   * @param {Array} props Array of records to be created.
+   * @param {Object} [opts] Configuration options.
+   * @param {boolean} [opts.raw=false] TODO
+   * @return {Promise}
+   */
+  createMany (mapper, props, opts) {
+    const self = this
+    props || (props = {})
+    opts || (opts = {})
+
+    return createTask(function (success, failure) {
+      queueTask(function () {
+        let op
+        // beforeCreateMany lifecycle hook
+        op = opts.op = 'beforeCreateMany'
+        return resolve(self[op](mapper, props, opts)).then(function (_props) {
+          // Allow for re-assignment from lifecycle hook
+          let records = isUndefined(_props) ? props : _props
+          const idAttribute = mapper.idAttribute
+
+          // Create the record
+          // TODO: Create related records when the "with" option is provided
+          records.forEach(function (record) {
+            const id = get(record, idAttribute) || guid()
+            set(record, idAttribute, id)
+            const key = self.getIdPath(mapper, opts, id)
+            self.storage.setItem(key, toJson(record))
+            self.ensureId(id, mapper, opts)
+          })
+
+          // afterCreateMany lifecycle hook
+          op = opts.op = 'afterCreateMany'
+          return self[op](mapper, props, opts, records).then(function (_records) {
+            // Allow for re-assignment from lifecycle hook
+            records = isUndefined(_records) ? records : _records
+            return opts.raw ? {
+              data: records,
+              created: records.length
+            } : records
+          })
+        }).then(success, failure)
+      })
+    })
+  },
+
+  /**
+   * @name LocalStorageAdapter#dbg
+   * @method
+   */
+  dbg (...args) {
+    this.log('debug', ...args)
+  },
+
+  /**
+   * Destroy the record with the given primary key.
+   *
+   * @name LocalStorageAdapter#destroy
+   * @method
+   * @param {Object} mapper The mapper.
+   * @param {(string|number)} id Primary key of the record to destroy.
+   * @param {Object} [opts] Configuration options.
+   * @param {boolean} [opts.raw=false] TODO
+   * @return {Promise}
+   */
+  destroy (mapper, id, opts) {
+    const self = this
+    opts || (opts = {})
+
+    return createTask(function (success, failure) {
+      queueTask(function () {
+        let op
+        // beforeDestroy lifecycle hook
+        op = opts.op = 'beforeDestroy'
+        return resolve(self[op](mapper, id, opts)).then(function () {
+          op = opts.op = 'destroy'
+          self.dbg(op, id, opts)
+          // Destroy the record
+          // TODO: Destroy related records when the "with" option is provided
+          self.storage.removeItem(self.getIdPath(mapper, opts, id))
+          self.removeId(id, mapper, opts)
+
+          // afterDestroy lifecycle hook
+          op = opts.op = 'afterDestroy'
+          return self[op](mapper, id, opts).then(function (_id) {
+            // Allow for re-assignment from lifecycle hook
+            id = isUndefined(_id) ? id : _id
+            return opts.raw ? {
+              data: id,
+              deleted: 1
+            } : id
+          })
+        }).then(success, failure)
+      })
+    })
+  },
+
+  /**
+   * Destroy the records that match the selection `query`.
+   *
+   * @name LocalStorageAdapter#destroyAll
+   * @method
+   * @param {Object} mapper The mapper.
+   * @param {Object} query Selection query.
+   * @param {Object} [opts] Configuration opts.
+   * @param {boolean} [opts.raw=false] TODO
+   * @return {Promise}
+   */
+  destroyAll (mapper, query, opts) {
+    const self = this
+    query || (query = {})
+    opts || (opts = {})
+
+    return createTask(function (success, failure) {
+      queueTask(function () {
+        let op
+        // beforeDestroyAll lifecycle hook
+        op = opts.op = 'beforeDestroyAll'
+        return resolve(self[op](mapper, query, opts)).then(function () {
+          op = opts.op = 'destroyAll'
+          self.dbg(op, query, opts)
+          // Find the records that are to be destroyed
+          return self.findAll(mapper, query, opts)
+        }).then(function (records) {
+          const idAttribute = mapper.idAttribute
+          // Gather IDs of records to be destroyed
+          let ids = records.map(function (record) {
+            return get(record, idAttribute)
+          })
+          // Destroy each record
+          // TODO: Destroy related records when the "with" option is provided
+          ids.forEach(function (id) {
+            self.storage.removeItem(self.getIdPath(mapper, opts, id))
+          })
+          self.removeId(ids, mapper, opts)
+
+          // afterDestroyAll lifecycle hook
+          op = opts.op = 'afterDestroyAll'
+          return self[op](mapper, query, opts, ids).then(function (_ids) {
+            // Allow for re-assignment from lifecycle hook
+            ids = isUndefined(_ids) ? ids : _ids
+            return opts.raw ? {
+              data: ids,
+              deleted: records.length
+            } : ids
+          })
+        }).then(success, failure)
+      })
+    })
+  },
+
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#ensureId
+   * @method
+   */
+  ensureId (id, mapper, opts) {
+    const ids = this.getIds(mapper, opts)
+    if (isArray(id)) {
       if (!id.length) {
         return
       }
-      DSUtils.forEach(id, function (_id) {
+      id.forEach(function (_id) {
         ids[_id] = 1
       })
     } else {
       ids[id] = 1
     }
-    this.saveKeys(ids, resourceConfig, options)
-  }
+    this.saveKeys(ids, mapper, opts)
+  },
 
-  removeId (id, resourceConfig, options) {
-    const ids = this.getIds(resourceConfig, options)
-    if (DSUtils.isArray(id)) {
+  /**
+   * Retrieve the record with the given primary key.
+   *
+   * @name LocalStorageAdapter#find
+   * @method
+   * @param {Object} mapper The mapper.
+   * @param {(string|number)} id Primary key of the record to retrieve.
+   * @param {Object} [opts] Configuration options.
+   * @param {boolean} [opts.raw=false] TODO
+   * @param {string[]} [opts.with=[]] TODO
+   * @return {Promise}
+   */
+  find (mapper, id, opts) {
+    const self = this
+    let record, op
+    opts || (opts = {})
+    opts.with || (opts.with = [])
+
+    // beforeFind lifecycle hook
+    op = opts.op = 'beforeFind'
+    return resolve(self[op](mapper, id, opts)).then(function () {
+      op = opts.op = 'find'
+      self.dbg(op, id, opts)
+      const key = self.getIdPath(mapper, opts, id)
+      record = self.storage.getItem(key)
+      if (isUndefined(record)) {
+        record = undefined
+        return
+      }
+      record = fromJson(record)
+      const tasks = []
+      const relationList = mapper.relationList || []
+
+      relationList.forEach(function (def) {
+        const relationName = def.relation
+        const relatedMapper = def.getRelation()
+        let containedName = null
+        if (opts.with.indexOf(relationName) !== -1) {
+          containedName = relationName
+        } else if (opts.with.indexOf(def.localField) !== -1) {
+          containedName = def.localField
+        }
+        if (!containedName) {
+          return
+        }
+        let __opts = copy(opts)
+        __opts.with = opts.with.slice()
+        fillIn(__opts, relatedMapper)
+        const index = __opts.with.indexOf(containedName)
+        if (index >= 0) {
+          __opts.with.splice(index, 1)
+        }
+        __opts.with.forEach(function (relation, i) {
+          if (relation && relation.indexOf(containedName) === 0 && relation.length >= containedName.length && relation[containedName.length] === '.') {
+            __opts.with[i] = relation.substr(containedName.length + 1)
+          } else {
+            __opts.with[i] = ''
+          }
+        })
+
+        let task
+
+        if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {
+          task = self.findAll(relatedMapper, {
+            [def.foreignKey]: get(record, mapper.idAttribute)
+          }, __opts).then(function (relatedItems) {
+            if (def.type === 'hasOne' && relatedItems.length) {
+              set(record, def.localField, relatedItems[0])
+            } else {
+              set(record, def.localField, relatedItems)
+            }
+            return relatedItems
+          })
+        } else if (def.type === 'hasMany' && def.localKeys) {
+          let localKeys = []
+          let itemKeys = get(record, def.localKeys) || []
+          itemKeys = Array.isArray(itemKeys) ? itemKeys : Object.keys(itemKeys)
+          localKeys = localKeys.concat(itemKeys || [])
+          task = self.findAll(relatedMapper, {
+            where: {
+              [relatedMapper.idAttribute]: {
+                'in': unique(localKeys).filter(function (x) { return x })
+              }
+            }
+          }, __opts).then(function (relatedItems) {
+            set(record, def.localField, relatedItems)
+            return relatedItems
+          })
+        } else if (def.type === 'belongsTo') {
+          task = self.find(relatedMapper, get(record, def.foreignKey), __opts).then(function (relatedItem) {
+            set(record, def.localField, relatedItem)
+            return relatedItem
+          })
+        }
+
+        if (task) {
+          tasks.push(task)
+        }
+      })
+
+      return Promise.all(tasks)
+    }).then(function () {
+      // afterFind lifecycle hook
+      op = opts.op = 'afterFind'
+      return resolve(self[op](mapper, id, opts, record)).then(function (_record) {
+        // Allow for re-assignment from lifecycle hook
+        record = isUndefined(_record) ? record : _record
+        return opts.raw ? {
+          data: record,
+          found: record ? 1 : 0
+        } : record
+      })
+    })
+  },
+
+  /**
+   * Retrieve the records that match the selection `query`.
+   *
+   * @name LocalStorageAdapter#findAll
+   * @method
+   * @param {Object} mapper The mapper.
+   * @param {Object} query Selection query.
+   * @param {Object} [opts] Configuration options.
+   * @param {boolean} [opts.raw=false] TODO
+   * @param {string[]} [opts.with=[]] TODO
+   * @return {Promise}
+   */
+  findAll (mapper, query, opts) {
+    const self = this
+    let records = []
+    let op
+    opts || (opts = {})
+    opts.with || (opts.with = [])
+
+    // beforeFindAll lifecycle hook
+    op = opts.op = 'beforeFindAll'
+    return resolve(self[op](mapper, query, opts)).then(function () {
+      op = opts.op = 'findAll'
+      self.dbg(op, query, opts)
+
+      // Load all records into memory...
+      const ids = self.getIds(mapper, opts)
+      forOwn(ids, function (value, id) {
+        const json = self.storage.getItem(self.getIdPath(mapper, opts, id))
+        if (json) {
+          records.push(fromJson(json))
+        }
+      })
+      const idAttribute = mapper.idAttribute
+      // TODO: Verify that this collection gets properly garbage collected
+      // TODO: Or, find a way to filter without using Collection
+      const _query = new Query({
+        index: {
+          getAll () {
+            return records
+          }
+        }
+      })
+      records = _query.filter(query).run()
+      const tasks = []
+      const relationList = mapper.relationList || []
+
+      relationList.forEach(function (def) {
+        const relationName = def.relation
+        const relatedMapper = def.getRelation()
+        let containedName = null
+        if (opts.with.indexOf(relationName) !== -1) {
+          containedName = relationName
+        } else if (opts.with.indexOf(def.localField) !== -1) {
+          containedName = def.localField
+        }
+        if (!containedName) {
+          return
+        }
+        let __opts = copy(opts)
+        __opts.with = opts.with.slice()
+        fillIn(__opts, relatedMapper)
+        const index = __opts.with.indexOf(containedName)
+        if (index >= 0) {
+          __opts.with.splice(index, 1)
+        }
+        __opts.with.forEach(function (relation, i) {
+          if (relation && relation.indexOf(containedName) === 0 && relation.length >= containedName.length && relation[containedName.length] === '.') {
+            __opts.with[i] = relation.substr(containedName.length + 1)
+          } else {
+            __opts.with[i] = ''
+          }
+        })
+
+        let task
+
+        if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {
+          task = self.findAll(relatedMapper, {
+            where: {
+              [def.foreignKey]: {
+                'in': records.map(function (item) {
+                  return get(item, idAttribute)
+                }).filter(function (x) { return x })
+              }
+            }
+          }, __opts).then(function (relatedItems) {
+            records.forEach(function (item) {
+              const attached = []
+              relatedItems.forEach(function (relatedItem) {
+                if (get(relatedItem, def.foreignKey) === get(item, idAttribute)) {
+                  attached.push(relatedItem)
+                }
+              })
+              if (def.type === 'hasOne' && attached.length) {
+                set(item, def.localField, attached[0])
+              } else {
+                set(item, def.localField, attached)
+              }
+            })
+            return relatedItems
+          })
+        } else if (def.type === 'hasMany' && def.localKeys) {
+          let localKeys = []
+          records.forEach(function (item) {
+            let itemKeys = get(item, def.localKeys) || []
+            itemKeys = Array.isArray(itemKeys) ? itemKeys : Object.keys(itemKeys)
+            localKeys = localKeys.concat(itemKeys || [])
+          })
+          task = self.findAll(relatedMapper, {
+            where: {
+              [relatedMapper.idAttribute]: {
+                'in': unique(localKeys).filter(function (x) { return x })
+              }
+            }
+          }, __opts).then(function (relatedItems) {
+            records.forEach(function (item) {
+              const attached = []
+              let itemKeys = get(item, def.localKeys) || []
+              itemKeys = Array.isArray(itemKeys) ? itemKeys : Object.keys(itemKeys)
+              relatedItems.forEach(function (relatedItem) {
+                if (itemKeys && itemKeys.indexOf(relatedItem[relatedMapper.idAttribute]) !== -1) {
+                  attached.push(relatedItem)
+                }
+              })
+              set(item, def.localField, attached)
+            })
+            return relatedItems
+          })
+        } else if (def.type === 'belongsTo') {
+          task = self.findAll(relatedMapper, {
+            where: {
+              [relatedMapper.idAttribute]: {
+                'in': records.map(function (item) {
+                  return get(item, def.foreignKey)
+                }).filter(function (x) { return x })
+              }
+            }
+          }, __opts).then(function (relatedItems) {
+            records.forEach(function (item) {
+              relatedItems.forEach(function (relatedItem) {
+                if (relatedItem[relatedMapper.idAttribute] === get(item, def.foreignKey)) {
+                  set(item, def.localField, relatedItem)
+                }
+              })
+            })
+            return relatedItems
+          })
+        }
+
+        if (task) {
+          tasks.push(task)
+        }
+      })
+      return Promise.all(tasks)
+    }).then(function () {
+      // afterFindAll lifecycle hook
+      op = opts.op = 'afterFindAll'
+      return resolve(self[op](mapper, query, opts, records)).then(function (_records) {
+        // Allow for re-assignment from lifecycle hook
+        records = isUndefined(_records) ? records : _records
+        return opts.raw ? {
+          data: records,
+          found: records.length
+        } : records
+      })
+    })
+  },
+
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#getPath
+   * @method
+   */
+  getPath (mapper, opts) {
+    opts = opts || {}
+    return makePath(opts.basePath === undefined ? (mapper.basePath === undefined ? this.basePath : mapper.basePath) : opts.basePath, mapper.name)
+  },
+
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#getIdPath
+   * @method
+   */
+  getIdPath (mapper, opts, id) {
+    opts = opts || {}
+    return makePath(opts.basePath || this.basePath || mapper.basePath, mapper.endpoint, id)
+  },
+
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#getIds
+   * @method
+   */
+  getIds (mapper, opts) {
+    let ids
+    const idsPath = this.getPath(mapper, opts)
+    const idsJson = this.storage.getItem(idsPath)
+    if (idsJson) {
+      ids = fromJson(idsJson)
+    } else {
+      ids = {}
+    }
+    return ids
+  },
+
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#log
+   * @method
+   */
+  log (level, ...args) {
+    if (level && !args.length) {
+      args.push(level)
+      level = 'debug'
+    }
+    if (level === 'debug' && !this.debug) {
+      return
+    }
+    const prefix = `${level.toUpperCase()}: (LocalStorageAdapter)`
+    if (console[level]) {
+      console[level](prefix, ...args)
+    } else {
+      console.log(prefix, ...args)
+    }
+  },
+
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#removeId
+   * @method
+   */
+  removeId (id, mapper, opts) {
+    const ids = this.getIds(mapper, opts)
+    if (isArray(id)) {
       if (!id.length) {
         return
       }
-      DSUtils.forEach(id, function (_id) {
+      id.forEach(function (_id) {
         delete ids[_id]
       })
     } else {
       delete ids[id]
     }
-    this.saveKeys(ids, resourceConfig, options)
-  }
+    this.saveKeys(ids, mapper, opts)
+  },
 
-  GET (key) {
-    return new DSUtils.Promise(resolve => {
-      let item = this.storage.getItem(key)
-      resolve(item ? DSUtils.fromJson(item) : undefined)
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#saveKeys
+   * @method
+   */
+  saveKeys (ids, mapper, opts) {
+    ids = ids || {}
+    const idsPath = this.getPath(mapper, opts)
+    if (Object.keys(ids).length) {
+      this.storage.setItem(idsPath, toJson(ids))
+    } else {
+      this.storage.removeItem(idsPath)
+    }
+  },
+
+  /**
+   * Update the records that match the selection `query`. If a record with the
+   * specified primary key cannot be found then no update is performed and the
+   * promise is resolved with `undefined`.
+   *
+   * @name LocalStorageAdapter#update
+   * @method
+   * @param {Object} mapper The mapper.
+   * @param {(string|number)} id The primary key of the record to be updated.
+   * @param {Object} props The update to apply to the record.
+   * @param {Object} [opts] Configuration options.
+   * @param {boolean} [opts.raw=false] TODO
+   * @return {Promise}
+   */
+  update (mapper, id, props, opts) {
+    const self = this
+    props || (props = {})
+    opts || (opts = {})
+
+    return createTask(function (success, failure) {
+      queueTask(function () {
+        let op
+        // beforeUpdate lifecycle hook
+        op = opts.op = 'beforeUpdate'
+        return resolve(self[op](mapper, id, props, opts)).then(function (_props) {
+          // Allow for re-assignment from lifecycle hook
+          props = isUndefined(_props) ? props : _props
+          const key = self.getIdPath(mapper, opts, id)
+          let record = self.storage.getItem(key)
+          record = record ? fromJson(record) : undefined
+          let updated = 0
+
+          // Update the record
+          // TODO: Update related records when the "with" option is provided
+          if (record) {
+            deepMixIn(record, props)
+            self.storage.setItem(key, toJson(record))
+            updated++
+          }
+
+          // afterUpdate lifecycle hook
+          op = opts.op = 'afterUpdate'
+          return self[op](mapper, id, props, opts, record).then(function (_record) {
+            // Allow for re-assignment from lifecycle hook
+            record = isUndefined(_record) ? record : _record
+            return opts.raw ? {
+              data: record,
+              updated
+            } : record
+          })
+        }).then(success, failure)
+      })
     })
-  }
+  },
 
-  PUT (key, value) {
-    let DSLocalStorageAdapter = this
-    return DSLocalStorageAdapter.GET(key).then(item => {
-      if (item) {
-        DSUtils.deepMixIn(item, DSUtils.removeCircular(value))
-      }
-      this.storage.setItem(key, DSUtils.toJson(item || value))
-      return DSLocalStorageAdapter.GET(key)
-    })
-  }
+  /**
+   * Update the records that match the selection `query`.
+   *
+   * @name LocalStorageAdapter#updateAll
+   * @method
+   * @param {Object} mapper The mapper.
+   * @param {Object} props The update to apply to the selected records.
+   * @param {Object} query Selection query.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  updateAll (mapper, props, query, opts) {
+    const self = this
+    props || (props = {})
+    query || (query = {})
+    opts || (opts = {})
 
-  DEL (key) {
-    return new DSUtils.Promise(resolve => {
-      this.storage.removeItem(key)
-      resolve()
-    })
-  }
+    return createTask(function (success, failure) {
+      queueTask(function () {
+        let op
+        // beforeUpdateAll lifecycle hook
+        op = opts.op = 'beforeUpdateAll'
+        return resolve(self[op](mapper, props, query, opts)).then(function (_props) {
+          // Allow for re-assignment from lifecycle hook
+          props = isUndefined(_props) ? props : _props
+          op = opts.op = 'updateAll'
+          self.dbg(op, query, opts)
 
-  find (resourceConfig, id, options) {
-    let instance
-    options = options || {}
-    options.with = options.with || []
-    return new DSUtils.Promise((resolve, reject) => {
-      this.GET(this.getIdPath(resourceConfig, options || {}, id))
-        .then(item => !item ? reject(new Error('Not Found!')) : item)
-        .then(_instance => {
-          instance = _instance
-          let tasks = []
+          // Find the records that are to be updated
+          return self.findAll(mapper, query, opts)
+        }).then(function (records) {
+          const idAttribute = mapper.idAttribute
+          let updated = 0
 
-          DSUtils.forEach(resourceConfig.relationList, def => {
-            let relationName = def.relation
-            let relationDef = resourceConfig.getResource(relationName)
-            let containedName = null
-            if (DSUtils.contains(options.with, relationName)) {
-              containedName = relationName
-            } else if (DSUtils.contains(options.with, def.localField)) {
-              containedName = def.localField
-            }
-            if (containedName) {
-              let __options = DSUtils.deepMixIn({}, options.orig ? options.orig() : options)
-              __options.with = options.with.slice()
-              __options = DSUtils._(relationDef, __options)
-              DSUtils.remove(__options.with, containedName)
-              DSUtils.forEach(__options.with, (relation, i) => {
-                if (relation && relation.indexOf(containedName) === 0 && relation.length >= containedName.length && relation[containedName.length] === '.') {
-                  __options.with[i] = relation.substr(containedName.length + 1)
-                } else {
-                  __options.with[i] = ''
-                }
-              })
-
-              let task
-
-              if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {
-                task = this.findAll(resourceConfig.getResource(relationName), {
-                  where: {
-                    [def.foreignKey]: {
-                      '==': instance[resourceConfig.idAttribute]
-                    }
-                  }
-                }, __options).then(relatedItems => {
-                  if (def.type === 'hasOne' && relatedItems.length) {
-                    DSUtils.set(instance, def.localField, relatedItems[0])
-                  } else {
-                    DSUtils.set(instance, def.localField, relatedItems)
-                  }
-                  return relatedItems
-                })
-              } else if (def.type === 'hasMany' && def.localKeys) {
-                let localKeys = []
-                let itemKeys = instance[def.localKeys] || []
-                itemKeys = Array.isArray(itemKeys) ? itemKeys : DSUtils.keys(itemKeys)
-                localKeys = localKeys.concat(itemKeys || [])
-                task = this.findAll(resourceConfig.getResource(relationName), {
-                  where: {
-                    [relationDef.idAttribute]: {
-                      'in': DSUtils.filter(unique(localKeys), x => x)
-                    }
-                  }
-                }, __options).then(relatedItems => {
-                  DSUtils.set(instance, def.localField, relatedItems)
-                  return relatedItems
-                })
-              } else if (def.type === 'belongsTo' || (def.type === 'hasOne' && def.localKey)) {
-                task = this.find(resourceConfig.getResource(relationName), DSUtils.get(instance, def.localKey), __options).then(relatedItem => {
-                  DSUtils.set(instance, def.localField, relatedItem)
-                  return relatedItem
-                })
-              }
-
-              if (task) {
-                tasks.push(task)
-              }
-            }
+          // Update each record
+          // TODO: Update related records when the "with" option is provided
+          records.forEach(function (record) {
+            record || (record = {})
+            const id = get(record, idAttribute)
+            const key = self.getIdPath(mapper, opts, id)
+            deepMixIn(record, props)
+            self.storage.setItem(key, toJson(record))
+            updated++
           })
 
-          return DSUtils.Promise.all(tasks)
-        })
-        .then(() => resolve(instance))
-        .catch(reject)
+          // afterUpdateAll lifecycle hook
+          op = opts.op = 'afterUpdateAll'
+          return self[op](mapper, props, query, opts, records).then(function (_records) {
+            // Allow for re-assignment from lifecycle hook
+            records = isUndefined(_records) ? records : _records
+            return opts.raw ? {
+              data: records,
+              updated
+            } : records
+          })
+        }).then(success, failure)
+      })
     })
-  }
+  },
 
-  findAll (resourceConfig, params, options) {
-    let items = null
-    options = options || {}
-    options.with = options.with || []
-    return new DSUtils.Promise((resolve, reject) => {
-      try {
-        options = options || {}
-        if (!('allowSimpleWhere' in options)) {
-          options.allowSimpleWhere = true
-        }
-        let items = []
-        let ids = DSUtils.keys(this.getIds(resourceConfig, options))
-        DSUtils.forEach(ids, id => {
-          let itemJson = this.storage.getItem(this.getIdPath(resourceConfig, options, id))
-          if (itemJson) {
-            items.push(DSUtils.fromJson(itemJson))
-          }
-        })
-        resolve(filter.call(emptyStore, items, resourceConfig.name, params, options))
-      } catch (err) {
-        reject(err)
-      }
-    }).then(_items => {
-      items = _items
-      let tasks = []
-      DSUtils.forEach(resourceConfig.relationList, def => {
-        let relationName = def.relation
-        let relationDef = resourceConfig.getResource(relationName)
-        let containedName = null
-        if (DSUtils.contains(options.with, relationName)) {
-          containedName = relationName
-        } else if (DSUtils.contains(options.with, def.localField)) {
-          containedName = def.localField
-        }
-        if (containedName) {
-          let __options = DSUtils.deepMixIn({}, options.orig ? options.orig() : options)
-          __options.with = options.with.slice()
-          __options = DSUtils._(relationDef, __options)
-          DSUtils.remove(__options.with, containedName)
-          DSUtils.forEach(__options.with, (relation, i) => {
-            if (relation && relation.indexOf(containedName) === 0 && relation.length >= containedName.length && relation[containedName.length] === '.') {
-              __options.with[i] = relation.substr(containedName.length + 1)
-            } else {
-              __options.with[i] = ''
+  /**
+   * Update the given records in a single batch.
+   *
+   * @name LocalStorageAdapter#updateMany
+   * @method
+   * @param {Object} mapper The mapper.
+   * @param {Object} records The records to update.
+   * @param {Object} [opts] Configuration options.
+   * @param {boolean} [opts.raw=false] TODO
+   * @return {Promise}
+   */
+  updateMany (mapper, records, opts) {
+    const self = this
+    records || (records = [])
+    opts || (opts = {})
+
+    return createTask(function (success, failure) {
+      queueTask(function () {
+        let op
+        let updatedRecords = []
+        // beforeUpdateMany lifecycle hook
+        op = opts.op = 'beforeUpdateMany'
+        return resolve(self[op](mapper, records, opts)).then(function (_records) {
+          // Allow for re-assignment from lifecycle hook
+          records = isUndefined(_records) ? records : _records
+          op = opts.op = 'updateMany'
+          self.dbg(op, records, opts)
+
+          const idAttribute = mapper.idAttribute
+
+          // Update each record
+          // TODO: Update related records when the "with" option is provided
+          records.forEach(function (record) {
+            if (!record) {
+              return
             }
+            const id = get(record, idAttribute)
+            if (isUndefined(id)) {
+              return
+            }
+            const key = self.getIdPath(mapper, opts, id)
+            let json = self.storage.getItem(key)
+            const existingRecord = json ? fromJson(json) : undefined
+            if (!existingRecord) {
+              return
+            }
+            deepMixIn(existingRecord, record)
+            self.storage.setItem(key, toJson(existingRecord))
+            updatedRecords.push(existingRecord)
           })
 
-          let task
-
-          if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {
-            task = this.findAll(resourceConfig.getResource(relationName), {
-              where: {
-                [def.foreignKey]: {
-                  'in': DSUtils.filter(map(items, item => DSUtils.get(item, resourceConfig.idAttribute)), x => x)
-                }
-              }
-            }, __options).then(relatedItems => {
-              DSUtils.forEach(items, item => {
-                let attached = []
-                DSUtils.forEach(relatedItems, relatedItem => {
-                  if (DSUtils.get(relatedItem, def.foreignKey) === item[resourceConfig.idAttribute]) {
-                    attached.push(relatedItem)
-                  }
-                })
-                if (def.type === 'hasOne' && attached.length) {
-                  DSUtils.set(item, def.localField, attached[0])
-                } else {
-                  DSUtils.set(item, def.localField, attached)
-                }
-              })
-              return relatedItems
-            })
-          } else if (def.type === 'hasMany' && def.localKeys) {
-            let localKeys = []
-            DSUtils.forEach(items, item => {
-              let itemKeys = item[def.localKeys] || []
-              itemKeys = Array.isArray(itemKeys) ? itemKeys : DSUtils.keys(itemKeys)
-              localKeys = localKeys.concat(itemKeys || [])
-            })
-            task = this.findAll(resourceConfig.getResource(relationName), {
-              where: {
-                [relationDef.idAttribute]: {
-                  'in': DSUtils.filter(unique(localKeys), x => x)
-                }
-              }
-            }, __options).then(relatedItems => {
-              DSUtils.forEach(items, item => {
-                let attached = []
-                let itemKeys = item[def.localKeys] || []
-                itemKeys = Array.isArray(itemKeys) ? itemKeys : DSUtils.keys(itemKeys)
-                DSUtils.forEach(relatedItems, relatedItem => {
-                  if (itemKeys && DSUtils.contains(itemKeys, relatedItem[relationDef.idAttribute])) {
-                    attached.push(relatedItem)
-                  }
-                })
-                DSUtils.set(item, def.localField, attached)
-              })
-              return relatedItems
-            })
-          } else if (def.type === 'belongsTo' || (def.type === 'hasOne' && def.localKey)) {
-            task = this.findAll(resourceConfig.getResource(relationName), {
-              where: {
-                [relationDef.idAttribute]: {
-                  'in': DSUtils.filter(map(items, item => DSUtils.get(item, def.localKey)), x => x)
-                }
-              }
-            }, __options).then(relatedItems => {
-              DSUtils.forEach(items, item => {
-                DSUtils.forEach(relatedItems, relatedItem => {
-                  if (relatedItem[relationDef.idAttribute] === item[def.localKey]) {
-                    DSUtils.set(item, def.localField, relatedItem)
-                  }
-                })
-              })
-              return relatedItems
-            })
-          }
-
-          if (task) {
-            tasks.push(task)
-          }
-        }
-      })
-      return DSUtils.Promise.all(tasks)
-    }).then(() => items)
-  }
-
-  create (resourceConfig, attrs, options) {
-    return createTask((resolve, reject) => {
-      queueTask(() => {
-        attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid()
-        options = options || {}
-        this.PUT(
-          DSUtils.makePath(this.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])),
-          DSUtils.omit(attrs, resourceConfig.relationFields || [])
-        ).then(item => {
-          this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options)
-          resolve(item)
-        }).catch(reject)
+          // afterUpdateMany lifecycle hook
+          op = opts.op = 'afterUpdateMany'
+          return self[op](mapper, records, opts, updatedRecords).then(function (_records) {
+            // Allow for re-assignment from lifecycle hook
+            records = isUndefined(_records) ? updatedRecords : _records
+            return opts.raw ? {
+              data: records,
+              updated: updatedRecords.length
+            } : records
+          })
+        }).then(success, failure)
       })
     })
   }
+})
 
-  createMany (resourceConfig, items, options) {
-    return createTask((resolve, reject) => {
-      queueTask(() => {
-        const tasks = []
-        const ids = []
-        DSUtils.forEach(items, attrs => {
-          const id = attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid()
-          ids.push(id)
-          options = options || {}
-          tasks.push(this.PUT(
-            DSUtils.makePath(this.getIdPath(resourceConfig, options, id)),
-            DSUtils.omit(attrs, resourceConfig.relationFields || [])
-          ))
-        })
-        this.ensureId(ids, resourceConfig, options)
-        return DSUtils.Promise.all(tasks).then(resolve).catch(reject)
-      })
-    })
-  }
-
-  update (resourceConfig, id, attrs, options) {
-    return createTask((resolve, reject) => {
-      queueTask(() => {
-        options = options || {}
-        this.PUT(this.getIdPath(resourceConfig, options, id), DSUtils.omit(attrs, resourceConfig.relationFields || [])).then(item => {
-          this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options)
-          resolve(item)
-        }).catch(reject)
-      })
-    })
-  }
-
-  updateAll (resourceConfig, attrs, params, options) {
-    return this.findAll(resourceConfig, params, options).then(items => {
-      const tasks = []
-      DSUtils.forEach(items, item => tasks.push(this.update(resourceConfig, item[resourceConfig.idAttribute], DSUtils.omit(attrs, resourceConfig.relationFields || []), options)))
-      return DSUtils.Promise.all(tasks)
-    })
-  }
-
-  destroy (resourceConfig, id, options) {
-    return createTask((resolve, reject) => {
-      queueTask(() => {
-        options = options || {}
-        this.DEL(this.getIdPath(resourceConfig, options, id))
-          .then(() => this.removeId(id, resourceConfig, options))
-          .then(() => resolve(null), reject)
-      })
-    })
-  }
-
-  destroyAll (resourceConfig, params, options) {
-    return this.findAll(resourceConfig, params, options).then(items => {
-      const ids = []
-      DSUtils.forEach(items, item => {
-        const id = item[resourceConfig.idAttribute]
-        ids.push(id)
-        this.storage.removeItem(this.getIdPath(resourceConfig, options, id))
-      })
-      this.removeId(ids, resourceConfig, options)
-      return ids
-    })
-  }
-}
-
-DSLocalStorageAdapter.version = {
+/**
+ * Details of the current version of the `js-data-localstorage` module.
+ *
+ * @name LocalStorageAdapter.version
+ * @type {Object}
+ * @property {string} version.full The full semver value.
+ * @property {number} version.major The major version number.
+ * @property {number} version.minor The minor version number.
+ * @property {number} version.patch The patch version number.
+ * @property {(string|boolean)} version.alpha The alpha version value,
+ * otherwise `false` if the current version is not alpha.
+ * @property {(string|boolean)} version.beta The beta version value,
+ * otherwise `false` if the current version is not beta.
+ */
+LocalStorageAdapter.version = {
   full: '<%= pkg.version %>',
   major: parseInt('<%= major %>', 10),
   minor: parseInt('<%= minor %>', 10),
@@ -447,4 +1117,27 @@ DSLocalStorageAdapter.version = {
   beta: '<%= beta %>' !== 'false' ? '<%= beta %>' : false
 }
 
-module.exports = DSLocalStorageAdapter
+/**
+ * Registered as `js-data-localstorage` in NPM and Bower.
+ *
+ * __Script tag__:
+ * ```javascript
+ * window.LocalStorageAdapter
+ * ```
+ * __CommonJS__:
+ * ```javascript
+ * var LocalStorageAdapter = require('js-data-localstorage')
+ * ```
+ * __ES6 Modules__:
+ * ```javascript
+ * import LocalStorageAdapter from 'js-data-localstorage'
+ * ```
+ * __AMD__:
+ * ```javascript
+ * define('myApp', ['js-data-localstorage'], function (LocalStorageAdapter) { ... })
+ * ```
+ *
+ * @module js-data-localstorage
+ */
+
+module.exports = LocalStorageAdapter
