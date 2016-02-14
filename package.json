@@ -21,13 +21,20 @@
   "standard": {
     "parser": "babel-eslint",
     "globals": [
-      "localStorage"
+      "localStorage",
+      "beforeEach",
+      "describe",
+      "assert",
+      "TestRunner",
+      "it",
+      "JSData",
+      "LocalStorageAdapter"
     ]
   },
   "scripts": {
     "bundle": "webpack --config webpack.config.js --colors",
     "doc": "jsdoc -c conf.json src && node scripts/cleanup.js",
-    "lint": "standard src/**/*.js",
+    "lint": "standard src/**/*.js karma.start.js",
     "min": "uglifyjs dist/js-data-localstorage.js -o dist/js-data-localstorage.min.js --source-map dist/js-data-localstorage.min.map -v -m -c --screw-ie8",
     "version": "node scripts/version.js",
     "banner": "node scripts/banner.js",

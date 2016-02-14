@@ -305,6 +305,79 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    */
   beforeUpdateMany: noop,
 
+  _create (mapper, props, opts) {
+    const self = this
+    const id = get(props, mapper.idAttribute) || guid()
+    set(props, mapper.idAttribute, id)
+    const key = self.getIdPath(mapper, opts, id)
+
+    // Create the record
+    // TODO: Create related records when the "with" option is provided
+    self.storage.setItem(key, toJson(props))
+    self.ensureId(id, mapper, opts)
+    return fromJson(self.storage.getItem(key))
+  },
+
+  _createWithRelations (mapper, record, opts) {
+    const self = this
+    const fields = {}
+    opts.with || (opts.with = [])
+    const idAttribute = mapper.idAttribute
+    forEachRelation(mapper, opts, function (def, __opts) {
+      const localField = def.localField
+      const relationData = get(record, localField)
+      const relatedMapper = def.getRelation()
+      if (!relationData) {
+        return
+      }
+      if (def.type === 'hasMany') {
+        fields[localField] = relationData
+      } else if (def.type === 'hasOne') {
+        fields[localField] = relationData
+      } else if (def.type === 'belongsTo') {
+        fields[localField] = self._createWithRelations(relatedMapper, relationData, __opts)
+        set(record, def.foreignKey, get(fields[localField], relatedMapper.idAttribute))
+      }
+    })
+    const _props = {}
+    forOwn(record, function (value, key) {
+      if (!(key in fields)) {
+        _props[key] = value
+      }
+    })
+
+    const id = get(_props, idAttribute) || guid()
+    set(_props, idAttribute, id)
+    const key = self.getIdPath(mapper, opts, id)
+
+    // Create the record
+    // TODO: Create related records when the "with" option is provided
+    self.storage.setItem(key, toJson(_props))
+    self.ensureId(id, mapper, opts)
+    record = fromJson(self.storage.getItem(key))
+
+    forEachRelation(mapper, opts, function (def, __opts) {
+      const localField = def.localField
+      const relationData = fields[localField]
+      const relatedMapper = def.getRelation()
+      if (!relationData) {
+        return
+      }
+      if (def.type === 'hasMany') {
+        fields[localField] = relationData.map(function (relatedDataItem) {
+          set(relatedDataItem, def.foreignKey, id)
+          return self._createWithRelations(relatedMapper, relatedDataItem, __opts)
+        })
+      } else if (def.type === 'hasOne') {
+        set(relationData, def.foreignKey, id)
+        fields[localField] = self._createWithRelations(relatedMapper, relationData, __opts)
+      }
+    })
+
+    fillIn(record, fields)
+    return record
+  },
+
   /**
    * Create a new record.
    *
@@ -329,14 +402,7 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
         return resolve(self[op](mapper, props, opts)).then(function (_props) {
           // Allow for re-assignment from lifecycle hook
           let record = isUndefined(_props) ? props : _props
-          const id = get(record, mapper.idAttribute) || guid()
-          set(record, mapper.idAttribute, id)
-          const key = self.getIdPath(mapper, opts, id)
-
-          // Create the record
-          // TODO: Create related records when the "with" option is provided
-          self.storage.setItem(key, toJson(record))
-          self.ensureId(id, mapper, opts)
+          record = self._createWithRelations(mapper, record, opts)
 
           // afterCreate lifecycle hook
           op = opts.op = 'afterCreate'
@@ -377,16 +443,8 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
         return resolve(self[op](mapper, props, opts)).then(function (_props) {
           // Allow for re-assignment from lifecycle hook
           let records = isUndefined(_props) ? props : _props
-          const idAttribute = mapper.idAttribute
-
-          // Create the record
-          // TODO: Create related records when the "with" option is provided
-          records.forEach(function (record) {
-            const id = get(record, idAttribute) || guid()
-            set(record, idAttribute, id)
-            const key = self.getIdPath(mapper, opts, id)
-            self.storage.setItem(key, toJson(record))
-            self.ensureId(id, mapper, opts)
+          records = records.map(function (record) {
+            return self._createWithRelations(mapper, record, opts)
           })
 
           // afterCreateMany lifecycle hook
