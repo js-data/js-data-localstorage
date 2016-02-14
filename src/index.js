@@ -9,10 +9,10 @@ const {
 
 const {
   addHiddenPropsToTarget,
-  copy,
   deepMixIn,
   extend,
   fillIn,
+  forEachRelation,
   forOwn,
   fromJson,
   get,
@@ -561,35 +561,9 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
       }
       record = fromJson(record)
       const tasks = []
-      const relationList = mapper.relationList || []
 
-      relationList.forEach(function (def) {
-        const relationName = def.relation
+      forEachRelation(mapper, opts, function (def, __opts) {
         const relatedMapper = def.getRelation()
-        let containedName = null
-        if (opts.with.indexOf(relationName) !== -1) {
-          containedName = relationName
-        } else if (opts.with.indexOf(def.localField) !== -1) {
-          containedName = def.localField
-        }
-        if (!containedName) {
-          return
-        }
-        let __opts = copy(opts)
-        __opts.with = opts.with.slice()
-        fillIn(__opts, relatedMapper)
-        const index = __opts.with.indexOf(containedName)
-        if (index >= 0) {
-          __opts.with.splice(index, 1)
-        }
-        __opts.with.forEach(function (relation, i) {
-          if (relation && relation.indexOf(containedName) === 0 && relation.length >= containedName.length && relation[containedName.length] === '.') {
-            __opts.with[i] = relation.substr(containedName.length + 1)
-          } else {
-            __opts.with[i] = ''
-          }
-        })
-
         let task
 
         if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {
@@ -690,35 +664,9 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
       })
       records = _query.filter(query).run()
       const tasks = []
-      const relationList = mapper.relationList || []
 
-      relationList.forEach(function (def) {
-        const relationName = def.relation
+      forEachRelation(mapper, opts, function (def, __opts) {
         const relatedMapper = def.getRelation()
-        let containedName = null
-        if (opts.with.indexOf(relationName) !== -1) {
-          containedName = relationName
-        } else if (opts.with.indexOf(def.localField) !== -1) {
-          containedName = def.localField
-        }
-        if (!containedName) {
-          return
-        }
-        let __opts = copy(opts)
-        __opts.with = opts.with.slice()
-        fillIn(__opts, relatedMapper)
-        const index = __opts.with.indexOf(containedName)
-        if (index >= 0) {
-          __opts.with.splice(index, 1)
-        }
-        __opts.with.forEach(function (relation, i) {
-          if (relation && relation.indexOf(containedName) === 0 && relation.length >= containedName.length && relation[containedName.length] === '.') {
-            __opts.with[i] = relation.substr(containedName.length + 1)
-          } else {
-            __opts.with[i] = ''
-          }
-        })
-
         let task
 
         if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {

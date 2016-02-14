@@ -1,3 +1,12 @@
+##### 3.0.0-alpha.2 - 13 February 2016
+
+- Now making use of JSData.utils.forEachRelation
+
+##### 3.0.0-alpha.1 - 13 February 2016
+
+- Added support for `raw` option
+- Added lifecycle hooks
+
 ##### 2.3.2 - 12 December 2015
 
 ###### Backwards compatible bug fixes

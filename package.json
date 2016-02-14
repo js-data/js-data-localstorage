@@ -1,7 +1,7 @@
 {
   "name": "js-data-localstorage",
   "description": "localStorage adapter for js-data.",
-  "version": "3.0.0-alpha.1",
+  "version": "3.0.0-alpha.2",
   "homepage": "https://github.com/js-data/js-data-localstorage",
   "repository": {
     "type": "git",
@@ -38,7 +38,7 @@
     "ci": "npm test && cat ./coverage/PhantomJS*/lcov.info | coveralls || true && cat ./coverage/PhantomJS*/lcov.info | codacy-coverage || true"
   },
   "dependencies": {
-    "js-data": "^3.0.0-alpha.13"
+    "js-data": "^3.0.0-alpha.14"
   },
   "devDependencies": {
     "babel-core": "6.5.2",

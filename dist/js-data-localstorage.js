@@ -1,6 +1,6 @@
 /*!
 * js-data-localstorage
-* @version 3.0.0-alpha.1 - Homepage <https://github.com/js-data/js-data-localstorage>
+* @version 3.0.0-alpha.2 - Homepage <https://github.com/js-data/js-data-localstorage>
 * @author Jason Dobry <jason.dobry@gmail.com>
 * @copyright (c) 2014-2016 Jason Dobry
 * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
@@ -74,10 +74,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Query = JSData.Query;
 	var utils = JSData.utils;
 	var addHiddenPropsToTarget = utils.addHiddenPropsToTarget;
-	var copy = utils.copy;
 	var deepMixIn = utils.deepMixIn;
 	var extend = utils.extend;
 	var fillIn = utils.fillIn;
+	var forEachRelation = utils.forEachRelation;
 	var forOwn = utils.forOwn;
 	var fromJson = utils.fromJson;
 	var get = utils.get;
@@ -651,35 +651,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	      record = fromJson(record);
 	      var tasks = [];
-	      var relationList = mapper.relationList || [];
 	
-	      relationList.forEach(function (def) {
-	        var relationName = def.relation;
+	      forEachRelation(mapper, opts, function (def, __opts) {
 	        var relatedMapper = def.getRelation();
-	        var containedName = null;
-	        if (opts.with.indexOf(relationName) !== -1) {
-	          containedName = relationName;
-	        } else if (opts.with.indexOf(def.localField) !== -1) {
-	          containedName = def.localField;
-	        }
-	        if (!containedName) {
-	          return;
-	        }
-	        var __opts = copy(opts);
-	        __opts.with = opts.with.slice();
-	        fillIn(__opts, relatedMapper);
-	        var index = __opts.with.indexOf(containedName);
-	        if (index >= 0) {
-	          __opts.with.splice(index, 1);
-	        }
-	        __opts.with.forEach(function (relation, i) {
-	          if (relation && relation.indexOf(containedName) === 0 && relation.length >= containedName.length && relation[containedName.length] === '.') {
-	            __opts.with[i] = relation.substr(containedName.length + 1);
-	          } else {
-	            __opts.with[i] = '';
-	          }
-	        });
-	
 	        var task = undefined;
 	
 	        if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {
@@ -779,35 +753,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      });
 	      records = _query.filter(query).run();
 	      var tasks = [];
-	      var relationList = mapper.relationList || [];
 	
-	      relationList.forEach(function (def) {
-	        var relationName = def.relation;
+	      forEachRelation(mapper, opts, function (def, __opts) {
 	        var relatedMapper = def.getRelation();
-	        var containedName = null;
-	        if (opts.with.indexOf(relationName) !== -1) {
-	          containedName = relationName;
-	        } else if (opts.with.indexOf(def.localField) !== -1) {
-	          containedName = def.localField;
-	        }
-	        if (!containedName) {
-	          return;
-	        }
-	        var __opts = copy(opts);
-	        __opts.with = opts.with.slice();
-	        fillIn(__opts, relatedMapper);
-	        var index = __opts.with.indexOf(containedName);
-	        if (index >= 0) {
-	          __opts.with.splice(index, 1);
-	        }
-	        __opts.with.forEach(function (relation, i) {
-	          if (relation && relation.indexOf(containedName) === 0 && relation.length >= containedName.length && relation[containedName.length] === '.') {
-	            __opts.with[i] = relation.substr(containedName.length + 1);
-	          } else {
-	            __opts.with[i] = '';
-	          }
-	        });
-	
 	        var task = undefined;
 	
 	        if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {
@@ -1217,11 +1165,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * otherwise `false` if the current version is not beta.
 	 */
 	LocalStorageAdapter.version = {
-	  full: '3.0.0-alpha.1',
+	  full: '3.0.0-alpha.2',
 	  major: parseInt('3', 10),
 	  minor: parseInt('0', 10),
 	  patch: parseInt('0', 10),
-	  alpha:  true ? '1' : false,
+	  alpha:  true ? '2' : false,
 	  beta:  true ? 'false' : false
 	};
 	
