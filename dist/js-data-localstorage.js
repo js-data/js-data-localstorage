@@ -384,6 +384,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	   */
 	  beforeUpdateMany: noop,
 	
+	  _create: function _create(mapper, props, opts) {
+	    var self = this;
+	    var _props = {};
+	    var relationFields = mapper.relationFields || [];
+	    forOwn(props, function (value, key) {
+	      if (relationFields.indexOf(key) === -1) {
+	        _props[key] = value;
+	      }
+	    });
+	    var id = get(_props, mapper.idAttribute) || guid();
+	    set(_props, mapper.idAttribute, id);
+	    var key = self.getIdPath(mapper, opts, id);
+	
+	    // Create the record
+	    // TODO: Create related records when the "with" option is provided
+	    self.storage.setItem(key, toJson(_props));
+	    self.ensureId(id, mapper, opts);
+	    return fromJson(self.storage.getItem(key));
+	  },
+	
+	
 	  /**
 	   * Create a new record.
 	   *
@@ -408,15 +429,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return resolve(self[op](mapper, props, opts)).then(function (_props) {
 	          // Allow for re-assignment from lifecycle hook
 	          var record = isUndefined(_props) ? props : _props;
-	          var id = get(record, mapper.idAttribute) || guid();
-	          set(record, mapper.idAttribute, id);
-	          var key = self.getIdPath(mapper, opts, id);
-	
-	          // Create the record
-	          // TODO: Create related records when the "with" option is provided
-	          self.storage.setItem(key, toJson(record));
-	          self.ensureId(id, mapper, opts);
-	
+	          record = self._create(mapper, record, opts);
 	          // afterCreate lifecycle hook
 	          op = opts.op = 'afterCreate';
 	          return self[op](mapper, props, opts, record).then(function (_record) {
@@ -457,18 +470,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return resolve(self[op](mapper, props, opts)).then(function (_props) {
 	          // Allow for re-assignment from lifecycle hook
 	          var records = isUndefined(_props) ? props : _props;
-	          var idAttribute = mapper.idAttribute;
-	
-	          // Create the record
-	          // TODO: Create related records when the "with" option is provided
-	          records.forEach(function (record) {
-	            var id = get(record, idAttribute) || guid();
-	            set(record, idAttribute, id);
-	            var key = self.getIdPath(mapper, opts, id);
-	            self.storage.setItem(key, toJson(record));
-	            self.ensureId(id, mapper, opts);
+	          records = records.map(function (record) {
+	            return self._create(mapper, record, opts);
 	          });
-	
 	          // afterCreateMany lifecycle hook
 	          op = opts.op = 'afterCreateMany';
 	          return self[op](mapper, props, opts, records).then(function (_records) {
