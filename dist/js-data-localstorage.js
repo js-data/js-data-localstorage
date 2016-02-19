@@ -1,6 +1,6 @@
 /*!
 * js-data-localstorage
-* @version 3.0.0-alpha.2 - Homepage <https://github.com/js-data/js-data-localstorage>
+* @version 3.0.0-alpha.3 - Homepage <https://github.com/js-data/js-data-localstorage>
 * @author Jason Dobry <jason.dobry@gmail.com>
 * @copyright (c) 2014-2016 Jason Dobry
 * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
@@ -1169,11 +1169,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * otherwise `false` if the current version is not beta.
 	 */
 	LocalStorageAdapter.version = {
-	  full: '3.0.0-alpha.2',
+	  full: '3.0.0-alpha.3',
 	  major: parseInt('3', 10),
 	  minor: parseInt('0', 10),
 	  patch: parseInt('0', 10),
-	  alpha:  true ? '2' : false,
+	  alpha:  true ? '3' : false,
 	  beta:  true ? 'false' : false
 	};
 	

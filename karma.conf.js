@@ -41,9 +41,10 @@ module.exports = function (config) {
 	config.set({
 		// base path, that will be used to resolve files and exclude
 		basePath: './',
-		frameworks: ['mocha'],
+		frameworks: ['chai', 'mocha'],
 		plugins: [
 			// these plugins will be require() by Karma
+			'karma-chai',
 			'karma-mocha',
 			'karma-phantomjs-launcher',
 			'karma-coverage',
@@ -56,9 +57,10 @@ module.exports = function (config) {
 
 		// list of files / patterns to load in the browser
 		files: [
-			'node_modules/es6-promise/dist/es6-promise.js',
+			'node_modules/babel-polyfill/dist/polyfill.js',
 			'node_modules/js-data/dist/js-data.js',
 			'dist/js-data-localstorage.js',
+			'karma.prestart.js',
 			'node_modules/js-data-adapter-tests/dist/js-data-adapter-tests.js',
 			'karma.start.js'
 		],
