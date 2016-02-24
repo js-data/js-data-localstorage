@@ -404,18 +404,24 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
           self.dbg(op, id, opts)
           // Destroy the record
           // TODO: Destroy related records when the "with" option is provided
-          self.storage.removeItem(self.getIdPath(mapper, opts, id))
-          self.removeId(id, mapper, opts)
+          const key = self.getIdPath(mapper, opts, id)
+          const recordJson = self.storage.getItem(key)
+          let deleted = 0
+          if (recordJson) {
+            self.storage.removeItem(key)
+            self.removeId(id, mapper, opts)
+            deleted++
+          }
 
           // afterDestroy lifecycle hook
           op = opts.op = 'afterDestroy'
-          return self[op](mapper, id, opts).then(function (_id) {
+          return resolve(self[op](mapper, id, opts, deleted ? id : undefined)).then(function (_id) {
             // Allow for re-assignment from lifecycle hook
             id = isUndefined(_id) ? id : _id
             return opts.raw ? {
-              data: id,
-              deleted: 1
-            } : id
+              data: deleted ? id : undefined,
+              deleted
+            } : deleted ? id : undefined
           })
         }).then(success, failure)
       })
@@ -522,7 +528,7 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
       self.dbg(op, id, opts)
       const key = self.getIdPath(mapper, opts, id)
       record = self.storage.getItem(key)
-      if (isUndefined(record)) {
+      if (!record) {
         record = undefined
         return
       }
@@ -548,11 +554,22 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
           let localKeys = []
           let itemKeys = get(record, def.localKeys) || []
           itemKeys = Array.isArray(itemKeys) ? itemKeys : Object.keys(itemKeys)
-          localKeys = localKeys.concat(itemKeys || [])
+          localKeys = localKeys.concat(itemKeys)
           task = self.findAll(relatedMapper, {
             where: {
               [relatedMapper.idAttribute]: {
                 'in': unique(localKeys).filter(function (x) { return x })
+              }
+            }
+          }, __opts).then(function (relatedItems) {
+            set(record, def.localField, relatedItems)
+            return relatedItems
+          })
+        } else if (def.type === 'hasMany' && def.foreignKeys) {
+          task = self.findAll(relatedMapper, {
+            where: {
+              [def.foreignKeys]: {
+                'contains': get(record, mapper.idAttribute)
               }
             }
           }, __opts).then(function (relatedItems) {
@@ -857,6 +874,7 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
           const key = self.getIdPath(mapper, opts, id)
           let record = self.storage.getItem(key)
           record = record ? fromJson(record) : undefined
+
           let updated = 0
 
           // Update the record
@@ -865,11 +883,13 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
             deepMixIn(record, props)
             self.storage.setItem(key, toJson(record))
             updated++
+          } else {
+            throw new Error('Not Found')
           }
 
           // afterUpdate lifecycle hook
           op = opts.op = 'afterUpdate'
-          return self[op](mapper, id, props, opts, record).then(function (_record) {
+          return resolve(self[op](mapper, id, props, opts, record)).then(function (_record) {
             // Allow for re-assignment from lifecycle hook
             record = isUndefined(_record) ? record : _record
             return opts.raw ? {

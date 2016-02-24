@@ -1,6 +1,6 @@
 /*!
 * js-data-localstorage
-* @version 3.0.0-alpha.3 - Homepage <https://github.com/js-data/js-data-localstorage>
+* @version 3.0.0-alpha.4 - Homepage <https://github.com/js-data/js-data-localstorage>
 * @author Jason Dobry <jason.dobry@gmail.com>
 * @copyright (c) 2014-2016 Jason Dobry
 * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
@@ -491,18 +491,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	          self.dbg(op, id, opts);
 	          // Destroy the record
 	          // TODO: Destroy related records when the "with" option is provided
-	          self.storage.removeItem(self.getIdPath(mapper, opts, id));
-	          self.removeId(id, mapper, opts);
+	          var key = self.getIdPath(mapper, opts, id);
+	          var recordJson = self.storage.getItem(key);
+	          var deleted = 0;
+	          if (recordJson) {
+	            self.storage.removeItem(key);
+	            self.removeId(id, mapper, opts);
+	            deleted++;
+	          }
 	
 	          // afterDestroy lifecycle hook
 	          op = opts.op = 'afterDestroy';
-	          return self[op](mapper, id, opts).then(function (_id) {
+	          return resolve(self[op](mapper, id, opts, deleted ? id : undefined)).then(function (_id) {
 	            // Allow for re-assignment from lifecycle hook
 	            id = isUndefined(_id) ? id : _id;
 	            return opts.raw ? {
-	              data: id,
-	              deleted: 1
-	            } : id;
+	              data: deleted ? id : undefined,
+	              deleted: deleted
+	            } : deleted ? id : undefined;
 	          });
 	        }).then(success, failure);
 	      });
@@ -613,7 +619,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      self.dbg(op, id, opts);
 	      var key = self.getIdPath(mapper, opts, id);
 	      record = self.storage.getItem(key);
-	      if (isUndefined(record)) {
+	      if (!record) {
 	        record = undefined;
 	        return;
 	      }
@@ -637,12 +643,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	          var localKeys = [];
 	          var itemKeys = get(record, def.localKeys) || [];
 	          itemKeys = Array.isArray(itemKeys) ? itemKeys : Object.keys(itemKeys);
-	          localKeys = localKeys.concat(itemKeys || []);
+	          localKeys = localKeys.concat(itemKeys);
 	          task = self.findAll(relatedMapper, {
 	            where: _defineProperty({}, relatedMapper.idAttribute, {
 	              'in': unique(localKeys).filter(function (x) {
 	                return x;
 	              })
+	            })
+	          }, __opts).then(function (relatedItems) {
+	            set(record, def.localField, relatedItems);
+	            return relatedItems;
+	          });
+	        } else if (def.type === 'hasMany' && def.foreignKeys) {
+	          task = self.findAll(relatedMapper, {
+	            where: _defineProperty({}, def.foreignKeys, {
+	              'contains': get(record, mapper.idAttribute)
 	            })
 	          }, __opts).then(function (relatedItems) {
 	            set(record, def.localField, relatedItems);
@@ -964,6 +979,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          var key = self.getIdPath(mapper, opts, id);
 	          var record = self.storage.getItem(key);
 	          record = record ? fromJson(record) : undefined;
+	
 	          var updated = 0;
 	
 	          // Update the record
@@ -972,11 +988,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	            deepMixIn(record, props);
 	            self.storage.setItem(key, toJson(record));
 	            updated++;
+	          } else {
+	            throw new Error('Not Found');
 	          }
 	
 	          // afterUpdate lifecycle hook
 	          op = opts.op = 'afterUpdate';
-	          return self[op](mapper, id, props, opts, record).then(function (_record) {
+	          return resolve(self[op](mapper, id, props, opts, record)).then(function (_record) {
 	            // Allow for re-assignment from lifecycle hook
 	            record = isUndefined(_record) ? record : _record;
 	            return opts.raw ? {
@@ -1133,11 +1151,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * otherwise `false` if the current version is not beta.
 	 */
 	LocalStorageAdapter.version = {
-	  full: '3.0.0-alpha.3',
+	  full: '3.0.0-alpha.4',
 	  major: parseInt('3', 10),
 	  minor: parseInt('0', 10),
 	  patch: parseInt('0', 10),
-	  alpha:  true ? '3' : false,
+	  alpha:  true ? '4' : false,
 	  beta:  true ? 'false' : false
 	};
 	

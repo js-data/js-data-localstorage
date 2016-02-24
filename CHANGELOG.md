@@ -1,3 +1,8 @@
+##### 3.0.0-alpha.4 - 23 February 2016
+
+- Improved find, destroy, and update methods
+- Upgraded to js-data-adapter-tests@2.0.0-alpha.6
+
 ##### 3.0.0-alpha.3 - 23 February 2016
 
 - Upgraded dependencies

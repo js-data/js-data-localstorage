@@ -4,7 +4,10 @@ beforeEach(function () {
 
 TestRunner.init({
   debug: false,
-  features: [],
+  features: [
+    'findHasManyLocalKeys',
+    'findHasManyForeignKeys'
+  ],
   JSData: JSData,
   Adapter: LocalStorageAdapter,
   adapterConfig: {
