@@ -2,9 +2,8 @@ beforeEach(function () {
   localStorage.clear()
 })
 
-window.assert = TestRunner.assert
-
 TestRunner.init({
+  debug: false,
   features: [],
   JSData: JSData,
   Adapter: LocalStorageAdapter,
@@ -14,7 +13,8 @@ TestRunner.init({
 })
 
 describe('relation functionality', function () {
-  it('nested create', function () {
+  // will be available in js-data 3.0.0-alpha.15
+  it.skip('nested create', function () {
     return this.$$container.create('user', {
       name: 'John',
       profile: {
@@ -29,7 +29,7 @@ describe('relation functionality', function () {
         }
       ]
     }, { with: ['profile', 'post', 'organization'] }).then(function (user) {
-      // console.log(JSON.stringify(user, null, 2))
+      console.log(JSON.stringify(user, null, 2))
       assert.isDefined(user)
       assert.isDefined(user.id)
       assert.isDefined(user.organization)
