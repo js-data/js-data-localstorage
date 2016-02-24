@@ -1,16 +1,12 @@
 {
   "name": "js-data-localstorage",
   "description": "localStorage adapter for js-data.",
-  "homepage": "http://www.js-data.io/docs/js-data-localstorage",
+  "homepage": "https://github.com/js-data/js-data-localstorage",
   "repository": {
     "type": "git",
     "url": "https://github.com/js-data/js-data-localstorage.git"
   },
-  "author": {
-    "name": "Jason Dobry",
-    "url": "http://www.pseudobry.com",
-    "email": "jason.dobry@gmail.com"
-  },
+  "author": "js-data-localstorage project authors",
   "main": "./dist/js-data-localstorage.js",
   "ignore": [
     ".idea/",

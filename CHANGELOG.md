@@ -1,3 +1,8 @@
+##### 3.0.0-alpha.3 - 23 February 2016
+
+- Upgraded dependencies
+- Updated Readme
+
 ##### 3.0.0-alpha.2 - 13 February 2016
 
 - Now making use of JSData.utils.forEachRelation

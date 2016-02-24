@@ -174,12 +174,6 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   afterCreateMany: noop2,
 
   /**
-   * @name LocalStorageAdapter#afterDEL
-   * @method
-   */
-  afterDEL: noop2,
-
-  /**
    * @name LocalStorageAdapter#afterDestroy
    * @method
    */
@@ -202,18 +196,6 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @method
    */
   afterFindAll: noop2,
-
-  /**
-   * @name LocalStorageAdapter#afterGET
-   * @method
-   */
-  afterGET: noop2,
-
-  /**
-   * @name LocalStorageAdapter#afterPUT
-   * @method
-   */
-  afterPUT: noop2,
 
   /**
    * @name LocalStorageAdapter#afterUpdate
@@ -246,12 +228,6 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   beforeCreateMany: noop,
 
   /**
-   * @name LocalStorageAdapter#beforeDEL
-   * @method
-   */
-  beforeDEL: noop,
-
-  /**
    * @name LocalStorageAdapter#beforeDestroy
    * @method
    */
@@ -274,18 +250,6 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @method
    */
   beforeFindAll: noop,
-
-  /**
-   * @name LocalStorageAdapter#beforeGET
-   * @method
-   */
-  beforeGET: noop,
-
-  /**
-   * @name LocalStorageAdapter#beforePUT
-   * @method
-   */
-  beforePUT: noop,
 
   /**
    * @name LocalStorageAdapter#beforeUpdate
