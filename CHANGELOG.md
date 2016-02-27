@@ -1,3 +1,7 @@
+##### 3.0.0-alpha.5 - 26 February 2016
+
+- Couple of fixes
+
 ##### 3.0.0-alpha.4 - 23 February 2016
 
 - Improved find, destroy, and update methods

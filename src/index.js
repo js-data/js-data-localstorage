@@ -119,6 +119,15 @@ const DEFAULTS = {
   /**
    * TODO
    *
+   * @name LocalStorageAdapter#returnDeletedIds
+   * @type {boolean}
+   * @default false
+   */
+  returnDeletedIds: false,
+
+  /**
+   * TODO
+   *
    * @name LocalStorageAdapter#storage
    * @type {Object}
    * @default localStorage
@@ -393,6 +402,7 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   destroy (mapper, id, opts) {
     const self = this
     opts || (opts = {})
+    const returnDeletedIds = isUndefined(opts.returnDeletedIds) ? self.returnDeletedIds : !!opts.returnDeletedIds
 
     return createTask(function (success, failure) {
       queueTask(function () {
@@ -415,13 +425,14 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
 
           // afterDestroy lifecycle hook
           op = opts.op = 'afterDestroy'
-          return resolve(self[op](mapper, id, opts, deleted ? id : undefined)).then(function (_id) {
+          return resolve(self[op](mapper, id, opts, deleted && returnDeletedIds ? id : undefined)).then(function (_id) {
             // Allow for re-assignment from lifecycle hook
-            id = isUndefined(_id) ? id : _id
-            return opts.raw ? {
-              data: deleted ? id : undefined,
+            id = isUndefined(_id) && returnDeletedIds ? id : _id
+            const result = {
+              data: id,
               deleted
-            } : deleted ? id : undefined
+            }
+            return self.getRaw(opts) ? result : result.data
           })
         }).then(success, failure)
       })
@@ -443,6 +454,7 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
     const self = this
     query || (query = {})
     opts || (opts = {})
+    const returnDeletedIds = isUndefined(opts.returnDeletedIds) ? self.returnDeletedIds : !!opts.returnDeletedIds
 
     return createTask(function (success, failure) {
       queueTask(function () {
@@ -453,7 +465,7 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
           op = opts.op = 'destroyAll'
           self.dbg(op, query, opts)
           // Find the records that are to be destroyed
-          return self.findAll(mapper, query, opts)
+          return self.findAll(mapper, query, { raw: false })
         }).then(function (records) {
           const idAttribute = mapper.idAttribute
           // Gather IDs of records to be destroyed
@@ -469,13 +481,14 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
 
           // afterDestroyAll lifecycle hook
           op = opts.op = 'afterDestroyAll'
-          return self[op](mapper, query, opts, ids).then(function (_ids) {
+          return self[op](mapper, query, opts, returnDeletedIds ? ids : undefined).then(function (_ids) {
             // Allow for re-assignment from lifecycle hook
-            ids = isUndefined(_ids) ? ids : _ids
-            return opts.raw ? {
+            ids = isUndefined(_ids) && returnDeletedIds ? ids : _ids
+            const result = {
               data: ids,
               deleted: records.length
-            } : ids
+            }
+            return self.getRaw(opts) ? result : result.data
           })
         }).then(success, failure)
       })
@@ -553,7 +566,7 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
         } else if (def.type === 'hasMany' && def.localKeys) {
           let localKeys = []
           let itemKeys = get(record, def.localKeys) || []
-          itemKeys = Array.isArray(itemKeys) ? itemKeys : Object.keys(itemKeys)
+          itemKeys = isArray(itemKeys) ? itemKeys : Object.keys(itemKeys)
           localKeys = localKeys.concat(itemKeys)
           task = self.findAll(relatedMapper, {
             where: {
@@ -683,7 +696,7 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
           records.forEach(function (item) {
             let itemKeys = get(item, def.localKeys) || []
             itemKeys = Array.isArray(itemKeys) ? itemKeys : Object.keys(itemKeys)
-            localKeys = localKeys.concat(itemKeys || [])
+            localKeys = localKeys.concat(itemKeys)
           })
           task = self.findAll(relatedMapper, {
             where: {
@@ -783,6 +796,17 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
       ids = {}
     }
     return ids
+  },
+
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#getRaw
+   * @method
+   */
+  getRaw (opts) {
+    opts || (opts = {})
+    return !!(isUndefined(opts.raw) ? this.raw : opts.raw)
   },
 
   /**

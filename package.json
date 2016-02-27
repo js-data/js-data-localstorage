@@ -1,7 +1,7 @@
 {
   "name": "js-data-localstorage",
   "description": "localStorage adapter for js-data.",
-  "version": "3.0.0-alpha.4",
+  "version": "3.0.0-alpha.5",
   "homepage": "https://github.com/js-data/js-data-localstorage",
   "repository": {
     "type": "git",
@@ -59,9 +59,9 @@
     "babel-preset-es2015": "6.5.0",
     "chai": "3.5.0",
     "codacy-coverage": "1.1.3",
-    "coveralls": "2.11.6",
+    "coveralls": "2.11.8",
     "ink-docstrap": "1.1.2",
-    "js-data-adapter-tests": "^2.0.0-alpha.6",
+    "js-data-adapter-tests": "^2.0.0-alpha.7",
     "jsdoc": "3.4.0",
     "karma": "0.13.21",
     "karma-browserstack-launcher": "0.1.10",

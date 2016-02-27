@@ -1,6 +1,6 @@
 /*!
 * js-data-localstorage
-* @version 3.0.0-alpha.4 - Homepage <https://github.com/js-data/js-data-localstorage>
+* @version 3.0.0-alpha.5 - Homepage <https://github.com/js-data/js-data-localstorage>
 * @author Jason Dobry <jason.dobry@gmail.com>
 * @copyright (c) 2014-2016 Jason Dobry
 * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
@@ -194,6 +194,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	   * @default false
 	   */
 	  debug: false,
+	
+	  /**
+	   * TODO
+	   *
+	   * @name LocalStorageAdapter#returnDeletedIds
+	   * @type {boolean}
+	   * @default false
+	   */
+	  returnDeletedIds: false,
 	
 	  /**
 	   * TODO
@@ -480,6 +489,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  destroy: function destroy(mapper, id, opts) {
 	    var self = this;
 	    opts || (opts = {});
+	    var returnDeletedIds = isUndefined(opts.returnDeletedIds) ? self.returnDeletedIds : !!opts.returnDeletedIds;
 	
 	    return createTask(function (success, failure) {
 	      queueTask(function () {
@@ -502,13 +512,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	          // afterDestroy lifecycle hook
 	          op = opts.op = 'afterDestroy';
-	          return resolve(self[op](mapper, id, opts, deleted ? id : undefined)).then(function (_id) {
+	          return resolve(self[op](mapper, id, opts, deleted && returnDeletedIds ? id : undefined)).then(function (_id) {
 	            // Allow for re-assignment from lifecycle hook
-	            id = isUndefined(_id) ? id : _id;
-	            return opts.raw ? {
-	              data: deleted ? id : undefined,
+	            id = isUndefined(_id) && returnDeletedIds ? id : _id;
+	            var result = {
+	              data: id,
 	              deleted: deleted
-	            } : deleted ? id : undefined;
+	            };
+	            return self.getRaw(opts) ? result : result.data;
 	          });
 	        }).then(success, failure);
 	      });
@@ -531,6 +542,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var self = this;
 	    query || (query = {});
 	    opts || (opts = {});
+	    var returnDeletedIds = isUndefined(opts.returnDeletedIds) ? self.returnDeletedIds : !!opts.returnDeletedIds;
 	
 	    return createTask(function (success, failure) {
 	      queueTask(function () {
@@ -541,7 +553,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          op = opts.op = 'destroyAll';
 	          self.dbg(op, query, opts);
 	          // Find the records that are to be destroyed
-	          return self.findAll(mapper, query, opts);
+	          return self.findAll(mapper, query, { raw: false });
 	        }).then(function (records) {
 	          var idAttribute = mapper.idAttribute;
 	          // Gather IDs of records to be destroyed
@@ -557,13 +569,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	          // afterDestroyAll lifecycle hook
 	          op = opts.op = 'afterDestroyAll';
-	          return self[op](mapper, query, opts, ids).then(function (_ids) {
+	          return self[op](mapper, query, opts, returnDeletedIds ? ids : undefined).then(function (_ids) {
 	            // Allow for re-assignment from lifecycle hook
-	            ids = isUndefined(_ids) ? ids : _ids;
-	            return opts.raw ? {
+	            ids = isUndefined(_ids) && returnDeletedIds ? ids : _ids;
+	            var result = {
 	              data: ids,
 	              deleted: records.length
-	            } : ids;
+	            };
+	            return self.getRaw(opts) ? result : result.data;
 	          });
 	        }).then(success, failure);
 	      });
@@ -642,7 +655,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        } else if (def.type === 'hasMany' && def.localKeys) {
 	          var localKeys = [];
 	          var itemKeys = get(record, def.localKeys) || [];
-	          itemKeys = Array.isArray(itemKeys) ? itemKeys : Object.keys(itemKeys);
+	          itemKeys = isArray(itemKeys) ? itemKeys : Object.keys(itemKeys);
 	          localKeys = localKeys.concat(itemKeys);
 	          task = self.findAll(relatedMapper, {
 	            where: _defineProperty({}, relatedMapper.idAttribute, {
@@ -772,7 +785,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            records.forEach(function (item) {
 	              var itemKeys = get(item, def.localKeys) || [];
 	              itemKeys = Array.isArray(itemKeys) ? itemKeys : Object.keys(itemKeys);
-	              localKeys = localKeys.concat(itemKeys || []);
+	              localKeys = localKeys.concat(itemKeys);
 	            });
 	            task = self.findAll(relatedMapper, {
 	              where: _defineProperty({}, relatedMapper.idAttribute, {
@@ -876,6 +889,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	      ids = {};
 	    }
 	    return ids;
+	  },
+	
+	
+	  /**
+	   * TODO
+	   *
+	   * @name LocalStorageAdapter#getRaw
+	   * @method
+	   */
+	  getRaw: function getRaw(opts) {
+	    opts || (opts = {});
+	    return !!(isUndefined(opts.raw) ? this.raw : opts.raw);
 	  },
 	
 	
@@ -1151,11 +1176,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * otherwise `false` if the current version is not beta.
 	 */
 	LocalStorageAdapter.version = {
-	  full: '3.0.0-alpha.4',
+	  full: '3.0.0-alpha.5',
 	  major: parseInt('3', 10),
 	  minor: parseInt('0', 10),
 	  patch: parseInt('0', 10),
-	  alpha:  true ? '4' : false,
+	  alpha:  true ? '5' : false,
 	  beta:  true ? 'false' : false
 	};
 	
