@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>js-data-localstorage Index</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.dark.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.lumen.css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">js-data-localstorage</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="modules.list.html" class="dropdown-toggle" data-toggle="dropdown">Modules<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="module-js-data-localstorage.html">js-data-localstorage</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="LocalStorageAdapter.html">LocalStorageAdapter</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+		<div class="col-sm-3 col-md-3">
+            <form class="navbar-form" role="search">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Search" name="q" id="search-input">
+                    <div class="input-group-btn">
+                        <button class="btn btn-default" id="search-submit"><i class="glyphicon glyphicon-search"></i></button>
+                    </div>
+                </div>
+            </form>
+        </div>
+	</div>
+
+</div>
+</div>
+
+
+<div class="container" id="toc-content">
+<div class="row">
+
+	
+	<div class="col-md-8">
+	
+		<div id="main">
+			
+
+	
+	
+
+
+
+    <h3>js-data-localstorage 3.0.0-alpha.3</h3>
+
+
+
+
+
+
+
+
+
+	
+	
+
+
+
+
+
+    <section class="readme-section">
+        <article><p><img src="https://raw.githubusercontent.com/js-data/js-data/master/js-data.png" alt="js-data logo" title="js-data" align="right" width="96" height="96" /></p>
+<h1>js-data-localstorage</h1><p><a href="http://slack.js-data.io"><img src="http://slack.js-data.io/badge.svg" alt="Slack Status"></a>
+<a href="https://www.npmjs.org/package/js-data-localstorage"><img src="https://img.shields.io/npm/v/js-data-localstorage.svg?style=flat" alt="npm version"></a>
+<a href="https://circleci.com/gh/js-data/js-data-localstorage/tree/master"><img src="https://img.shields.io/circleci/project/js-data/js-data-localstorage/master.svg?style=flat" alt="Circle CI"></a>
+<a href="https://www.npmjs.org/package/js-data-localstorage"><img src="https://img.shields.io/npm/dm/js-data-localstorage.svg?style=flat" alt="npm downloads"></a>
+<a href="https://coveralls.io/github/js-data/js-data-localstorage?branch=master"><img src="https://img.shields.io/coveralls/js-data/js-data-localstorage/master.svg?style=flat" alt="Coverage Status"></a>
+<a href="https://www.codacy.com/app/jasondobry/js-data-localstorage/dashboard"><img src="https://img.shields.io/codacy/b8e46008e6ad45159b7a6927dbfd66c3.svg" alt="Codacy"></a></p>
+<p>localStorage adapter for <a href="http://www.js-data.io/">js-data</a>.</p>
+<p>Tested on IE9, Chrome 46, Firefox 41 &amp; Safari 7.1 using
+<img src="https://raw.githubusercontent.com/js-data/js-data-localstorage/master/bs.jpg" alt="bs logo" title="browserstack" width="150" height="35" style="vertical-align: middle" /></p>
+<h2>Table of contents</h2><ul>
+<li><a href="#quick-start">Quick start</a></li>
+<li><a href="#guides-and-tutorials">Guides and Tutorials</a></li>
+<li><a href="#api-reference">API Reference</a></li>
+<li><a href="#demo">Demo</a></li>
+<li><a href="#support">Support</a></li>
+<li><a href="#community">Community</a></li>
+<li><a href="#contributing">Contributing</a></li>
+<li><a href="#license">License</a></li>
+</ul>
+<h2>Quick Start</h2><p><code>npm install --save js-data js-data-localstorage</code> or <code>bower install --save js-data js-data-localstorage</code>.</p>
+<p>Load <code>js-data-localstorage.js</code> after <code>js-data.js</code>.</p>
+<pre class="prettyprint source lang-js"><code>var adapter = new LocalStorageAdapter();
+
+var store = new JSData.DataStore();
+store.registerAdapter('localstorage', adapter, { default: true });
+
+// &quot;store&quot; will now use the localstorage adapter</code></pre><p>You can also provide a custom storage medium (it just needs to implement the <code>localStorage</code> API):</p>
+<pre class="prettyprint source lang-js"><code>var memory = {};
+
+// Turn js-data-localstorage into an in-memory adapter
+var memoryAdapter = new LocalStorageAdapter({
+  storage: {
+    getItem: function (key) {
+      return memory[key];
+    },
+    setItem: function (key, value) {
+      return memory[key] = value;
+    },
+    removeItem: function (key) {
+      delete memory[key];
+    }
+  }
+});
+
+// Turn js-data-localstorage into a sessionStorage adapter
+var sessionAdapter = new LocalStorageAdapter({
+  storage: sessionStorage
+});</code></pre><h2>Guides and Tutorials</h2><p><a href="http://js-data.io">Get started at http://js-data.io</a></p>
+<h2>API Reference Docs</h2><p><a href="http://api.js-data.io">Visit http://api.js-data.io</a>.</p>
+<h2>Demo</h2><p>https://js-data-localstorage.firebaseapp.com/</p>
+<h2>Community</h2><p><a href="http://js-data.io/docs/community">Explore the Community</a>.</p>
+<h2>Support</h2><p><a href="http://js-data.io/docs/support">Find out how to Get Support</a>.</p>
+<h2>Contributing</h2><p><a href="http://js-data.io/docs/contributing">Read the Contributing Guide</a>.</p>
+<h2>License</h2><p>The MIT License (MIT)</p>
+<p>Copyright (c) 2014-2016 js-data-http project authors</p>
+<ul>
+<li><a href="https://github.com/js-data/js-data-localstorage/blob/master/LICENSE">LICENSE</a></li>
+<li><a href="https://github.com/js-data/js-data-localstorage/blob/master/AUTHORS">AUTHORS</a></li>
+<li><a href="https://github.com/js-data/js-data-localstorage/blob/master/CONTRIBUTORS">CONTRIBUTORS</a></li>
+</ul></article>
+    </section>
+
+
+
+
+
+
+
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+		<div class="col-md-3">
+			<div id="toc" class="col-md-3 hidden-xs hidden-sm hidden-md"></div>
+		</div>
+	
+
+</div>
+</div>
+
+<div class="modal fade" id="searchResults">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Search results</h4>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div>
+
+<footer>
+
+	<div style="text-align:center">Back to <a href="http://js-data.io">js-data.io</a></div>
+
+
+	<span class="copyright">
+	js-data-localstorage Copyright © 2014-2016 Jason Dobry
+	</span>
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a>
+	
+		on 2016-02-23T21:32:28-08:00
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+<script type="text/javascript" src="scripts/fulltext-search-ui.js"></script>
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( "sunlight-highlight-" + lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	Sunlight.highlightAll( {
+		lineNumbers : true,
+		showMenu : true,
+		enableDoclinks : true
+	} );
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+<script type="text/javascript">
+	$(document).ready(function() {
+		SearcherDisplay.init();
+	});
+</script>
+
+</body>
+</html>
