@@ -1,3 +1,9 @@
+##### 3.0.0-alpha.6 - 10 March 2016
+
+###### Other
+- Now using js-data-repo-tools
+- Now using js-data-adapter
+
 ##### 3.0.0-alpha.5 - 26 February 2016
 
 - Couple of fixes
