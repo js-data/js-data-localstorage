@@ -8,21 +8,6 @@ const {
   utils
 } = JSData
 
-const {
-  addHiddenPropsToTarget,
-  deepMixIn,
-  extend,
-  fillIn,
-  forOwn,
-  fromJson,
-  get,
-  isArray,
-  isUndefined,
-  reject,
-  set,
-  toJson
-} = utils
-
 function isValidString (value) {
   return (value != null && value !== '')
 }
@@ -67,7 +52,7 @@ function createTask (fn) {
     taskInProcess = false
     queue.shift()
     setTimeout(dequeue, 0)
-    return reject(err)
+    return utils.reject(err)
   })
 }
 
@@ -119,8 +104,9 @@ const DEFAULTS = {
  */
 function LocalStorageAdapter (opts) {
   const self = this
+  utils.classCallCheck(self, LocalStorageAdapter)
   opts || (opts = {})
-  fillIn(opts, DEFAULTS)
+  utils.fillIn(opts, DEFAULTS)
   Adapter.call(self, opts)
 }
 
@@ -150,27 +136,47 @@ Object.defineProperty(LocalStorageAdapter, '__super__', {
  * properties to the subclass itself.
  * @return {Object} Subclass of `LocalStorageAdapter`.
  */
-LocalStorageAdapter.extend = extend
+LocalStorageAdapter.extend = utils.extend
 
-addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
+utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
+  /**
+   * Retrieve the number of records that match the selection query. Internal
+   * method used by Adapter#count.
+   *
+   * @name LocalStorageAdapter#_count
+   * @method
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {Object} query Selection query.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _count (mapper, query, opts) {
+    const self = this
+    return self._findAll(mapper, query, opts).then(function (result) {
+      result[0] = result[0].length
+      return result
+    })
+  },
+
   _createHelper (mapper, props, opts) {
     const self = this
     const _props = {}
     const relationFields = mapper.relationFields || []
-    forOwn(props, function (value, key) {
+    utils.forOwn(props, function (value, key) {
       if (relationFields.indexOf(key) === -1) {
         _props[key] = value
       }
     })
-    const id = get(_props, mapper.idAttribute) || guid()
-    set(_props, mapper.idAttribute, id)
+    const id = utils.get(_props, mapper.idAttribute) || guid()
+    utils.set(_props, mapper.idAttribute, id)
     const key = self.getIdPath(mapper, opts, id)
 
     // Create the record
     // TODO: Create related records when the "with" option is provided
-    self.storage.setItem(key, toJson(_props))
+    self.storage.setItem(key, utils.toJson(_props))
     self.ensureId(id, mapper, opts)
-    return fromJson(self.storage.getItem(key))
+    return utils.fromJson(self.storage.getItem(key))
   },
 
   /**
@@ -253,7 +259,7 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
       const idAttribute = mapper.idAttribute
       // Gather IDs of records to be destroyed
       const ids = records.map(function (record) {
-        return get(record, idAttribute)
+        return utils.get(record, idAttribute)
       })
       // Destroy each record
       ids.forEach(function (id) {
@@ -281,7 +287,7 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
     return new Promise(function (resolve) {
       const key = self.getIdPath(mapper, opts, id)
       const record = self.storage.getItem(key)
-      return resolve([record ? fromJson(record) : undefined, {}])
+      return resolve([record ? utils.fromJson(record) : undefined, {}])
     })
   },
 
@@ -304,10 +310,10 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
       // Load all records into memory...
       let records = []
       const ids = self.getIds(mapper, opts)
-      forOwn(ids, function (value, id) {
+      utils.forOwn(ids, function (value, id) {
         const json = self.storage.getItem(self.getIdPath(mapper, opts, id))
         if (json) {
-          records.push(fromJson(json))
+          records.push(utils.fromJson(json))
         }
       })
       const _query = new Query({
@@ -318,6 +324,31 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
         }
       })
       return resolve([_query.filter(query).run(), {}])
+    })
+  },
+
+  /**
+   * Retrieve the number of records that match the selection query. Internal
+   * method used by Adapter#sum.
+   *
+   * @name LocalStorageAdapter#_sum
+   * @method
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {string} field The field to sum.
+   * @param {Object} query Selection query.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _sum (mapper, field, query, opts) {
+    const self = this
+    return self._findAll(mapper, query, opts).then(function (result) {
+      let sum = 0
+      result[0].forEach(function (record) {
+        sum += utils.get(record, field) || 0
+      })
+      result[0] = sum
+      return result
     })
   },
 
@@ -343,9 +374,9 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
       if (!record) {
         return reject(new Error('Not Found'))
       }
-      record = fromJson(record)
-      deepMixIn(record, props)
-      self.storage.setItem(key, toJson(record))
+      record = utils.fromJson(record)
+      utils.deepMixIn(record, props)
+      self.storage.setItem(key, utils.toJson(record))
       return resolve([record, {}])
     })
   },
@@ -370,10 +401,10 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
       let [records] = results
       records.forEach(function (record) {
         record || (record = {})
-        const id = get(record, idAttribute)
+        const id = utils.get(record, idAttribute)
         const key = self.getIdPath(mapper, opts, id)
-        deepMixIn(record, props)
-        self.storage.setItem(key, toJson(record))
+        utils.deepMixIn(record, props)
+        self.storage.setItem(key, utils.toJson(record))
       })
       return [records, {}]
     })
@@ -401,8 +432,8 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
         if (!record) {
           return
         }
-        const id = get(record, idAttribute)
-        if (isUndefined(id)) {
+        const id = utils.get(record, idAttribute)
+        if (utils.isUndefined(id)) {
           return
         }
         const key = self.getIdPath(mapper, opts, id)
@@ -410,9 +441,9 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
         if (!json) {
           return
         }
-        const existingRecord = fromJson(json)
-        deepMixIn(existingRecord, record)
-        self.storage.setItem(key, toJson(existingRecord))
+        const existingRecord = utils.fromJson(json)
+        utils.deepMixIn(existingRecord, record)
+        self.storage.setItem(key, utils.toJson(existingRecord))
         updatedRecords.push(existingRecord)
       })
       return resolve([records, {}])
@@ -463,7 +494,7 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    */
   ensureId (id, mapper, opts) {
     const ids = this.getIds(mapper, opts)
-    if (isArray(id)) {
+    if (utils.isArray(id)) {
       if (!id.length) {
         return
       }
@@ -509,7 +540,7 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
     const idsPath = this.getPath(mapper, opts)
     const idsJson = this.storage.getItem(idsPath)
     if (idsJson) {
-      ids = fromJson(idsJson)
+      ids = utils.fromJson(idsJson)
     } else {
       ids = {}
     }
@@ -524,7 +555,7 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    */
   removeId (id, mapper, opts) {
     const ids = this.getIds(mapper, opts)
-    if (isArray(id)) {
+    if (utils.isArray(id)) {
       if (!id.length) {
         return
       }
@@ -547,7 +578,7 @@ addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
     ids = ids || {}
     const idsPath = this.getPath(mapper, opts)
     if (Object.keys(ids).length) {
-      this.storage.setItem(idsPath, toJson(ids))
+      this.storage.setItem(idsPath, utils.toJson(ids))
     } else {
       this.storage.removeItem(idsPath)
     }
