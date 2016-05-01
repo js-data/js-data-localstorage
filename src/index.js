@@ -1,31 +1,5 @@
 /* global: localStorage */
 
-/**
- * Registered as `js-data-localstorage` in NPM and Bower.
- *
- * @example <caption>Script tag</caption>
- * var LocalStorageAdapter = window.JSDataLocalStorage.LocalStorageAdapter
- * var adapter = new LocalStorageAdapter()
- *
- * @example <caption>CommonJS</caption>
- * var LocalStorageAdapter = require('js-data-localstorage').LocalStorageAdapter
- * var adapter = new LocalStorageAdapter()
- *
- * @example <caption>ES6 Modules</caption>
- * import {LocalStorageAdapter} from 'js-data-localstorage'
- * const adapter = new LocalStorageAdapter()
- *
- * @example <caption>AMD</caption>
- * define('myApp', ['js-data-localstorage'], function (JSDataLocalStorage) {
- *   var LocalStorageAdapter = JSDataLocalStorage.LocalStorageAdapter
- *   var adapter = new LocalStorageAdapter()
- *
- *   // ...
- * })
- *
- * @module js-data-localstorage
- */
-
 import {Query, utils} from 'js-data'
 import {Adapter} from '../node_modules/js-data-adapter/src/index'
 
@@ -43,15 +17,6 @@ const DEFAULTS = {
    * @type {string}
    */
   basePath: '',
-
-  /**
-   * TODO
-   *
-   * @name LocalStorageAdapter#debug
-   * @type {boolean}
-   * @default false
-   */
-  debug: false,
 
   /**
    * TODO
@@ -119,6 +84,13 @@ function createTask (fn) {
  */
 
 /**
+ * {@link LocalStorageAdapter} class. ES2015 default import.
+ *
+ * @name module:js-data-localstorage.default
+ * @see LocalStorageAdapter
+ */
+
+/**
  * LocalStorageAdapter class.
  *
  * @example
@@ -129,6 +101,7 @@ function createTask (fn) {
  * store.registerAdapter('ls', adapter, { 'default': true })
  *
  * @class LocalStorageAdapter
+ * @alias LocalStorageAdapter
  * @extends Adapter
  * @param {Object} [opts] Configuration options.
  * @param {string} [opts.basePath=''] See {@link LocalStorageAdapter#basePath}.
@@ -655,5 +628,31 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
  * otherwise `false` if the current version is not beta.
  */
 export const version = '<%= version %>'
+
+/**
+ * Registered as `js-data-localstorage` in NPM and Bower.
+ *
+ * @example <caption>Script tag</caption>
+ * var LocalStorageAdapter = window.JSDataLocalStorage.LocalStorageAdapter
+ * var adapter = new LocalStorageAdapter()
+ *
+ * @example <caption>CommonJS</caption>
+ * var LocalStorageAdapter = require('js-data-localstorage').LocalStorageAdapter
+ * var adapter = new LocalStorageAdapter()
+ *
+ * @example <caption>ES2015 Modules</caption>
+ * import {LocalStorageAdapter} from 'js-data-localstorage'
+ * const adapter = new LocalStorageAdapter()
+ *
+ * @example <caption>AMD</caption>
+ * define('myApp', ['js-data-localstorage'], function (JSDataLocalStorage) {
+ *   var LocalStorageAdapter = JSDataLocalStorage.LocalStorageAdapter
+ *   var adapter = new LocalStorageAdapter()
+ *
+ *   // ...
+ * })
+ *
+ * @module js-data-localstorage
+ */
 
 export default LocalStorageAdapter

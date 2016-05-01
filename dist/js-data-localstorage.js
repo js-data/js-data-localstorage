@@ -1858,15 +1858,6 @@
     /**
      * TODO
      *
-     * @name LocalStorageAdapter#debug
-     * @type {boolean}
-     * @default false
-     */
-    debug: false,
-
-    /**
-     * TODO
-     *
      * @name LocalStorageAdapter#storage
      * @type {Object}
      * @default localStorage
@@ -1934,6 +1925,13 @@
    */
 
   /**
+   * {@link LocalStorageAdapter} class. ES2015 default import.
+   *
+   * @name module:js-data-localstorage.default
+   * @see LocalStorageAdapter
+   */
+
+  /**
    * LocalStorageAdapter class.
    *
    * @example
@@ -1944,6 +1942,7 @@
    * store.registerAdapter('ls', adapter, { 'default': true })
    *
    * @class LocalStorageAdapter
+   * @alias LocalStorageAdapter
    * @extends Adapter
    * @param {Object} [opts] Configuration options.
    * @param {string} [opts.basePath=''] See {@link LocalStorageAdapter#basePath}.
