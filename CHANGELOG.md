@@ -1,3 +1,70 @@
+##### 3.0.0-beta.1 - 30 April 2016
+
+Official v3 beta release
+
+###### Breaking changes
+- How you must now import in ES2015:
+
+    ```js
+    import LocalStorageAdapter from 'js-data-localstorage'
+    const adapter = new LocalStorageAdapter()
+    ```
+    or
+    ```js
+    import {LocalStorageAdapter, version} from 'js-data-localstorage'
+    console.log(version)
+    const adapter = new LocalStorageAdapter()
+    ```
+
+- How you must now import in ES5:
+
+    ```js
+    var JSDataLocalStorage = require('js-data-localstorage')
+    var LocalStorageAdapter = JSDataLocalStorage.LocalStorageAdapter
+    var adapter = new LocalStorageAdapter()
+    ```
+
+- Moved some `dist` files to `release` to reduce noise
+
+###### Other
+- Upgraded dependencies
+- Improved JSDoc comments
+- Now using js-data JSDoc template
+
+##### 3.0.0-alpha.7 - 18 March 2016
+
+###### Backwards compatible API changes
+- Added count and sum methods
+
+##### 3.0.0-alpha.6 - 10 March 2016
+
+###### Other
+- Now using js-data-repo-tools
+- Now using js-data-adapter
+
+##### 3.0.0-alpha.5 - 26 February 2016
+
+- Couple of fixes
+
+##### 3.0.0-alpha.4 - 23 February 2016
+
+- Improved find, destroy, and update methods
+- Upgraded to js-data-adapter-tests@2.0.0-alpha.6
+
+##### 3.0.0-alpha.3 - 23 February 2016
+
+- Upgraded dependencies
+- Updated Readme
+
+##### 3.0.0-alpha.2 - 13 February 2016
+
+- Now making use of JSData.utils.forEachRelation
+
+##### 3.0.0-alpha.1 - 13 February 2016
+
+- Added support for `raw` option
+- Added lifecycle hooks
+
 ##### 2.3.2 - 12 December 2015
 
 ###### Backwards compatible bug fixes

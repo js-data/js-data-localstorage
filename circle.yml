@@ -1,8 +1,11 @@
+machine:
+  node:
+    version: 5.0.0
+
 dependencies:
   pre:
-    - bower install
-  cache_directories:
-    - "bower_components"
+    - npm i -g npm
+    - npm i js-data@^3.0.0-beta.3
 test:
   override:
     - npm run ci

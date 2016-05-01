@@ -1,19 +1,44 @@
 /* global: localStorage */
-let JSData = require('js-data')
-let guid = require('mout/random/guid')
-let unique = require('mout/array/unique')
-let map = require('mout/array/map')
 
-let emptyStore = new JSData.DS()
-let {DSUtils} = JSData
-let filter = emptyStore.defaults.defaultFilter
+import {Query, utils} from 'js-data'
+import {Adapter} from '../node_modules/js-data-adapter/src/index'
 
-class Defaults {
+// This is kinda weird, but it's so we can use Rollup.js
+import * as Guid from '../node_modules/mout/random/guid'
+const { default: guid } = Guid
 
+const __super__ = Adapter.prototype
+
+const DEFAULTS = {
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#basePath
+   * @type {string}
+   */
+  basePath: '',
+
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#storage
+   * @type {Object}
+   * @default localStorage
+   */
+  storage: localStorage
 }
 
-Defaults.prototype.basePath = ''
-
+function isValidString (value) {
+  return (value != null && value !== '')
+}
+function join (items, separator) {
+  separator || (separator = '')
+  return items.filter(isValidString).join(separator)
+}
+function makePath (...args) {
+  let result = join(args, '/')
+  return result.replace(/([^:\/]|^)\/{2,}/g, '$1/')
+}
 let queue = []
 let taskInProcess = false
 
@@ -38,413 +63,596 @@ function queueTask (task) {
 }
 
 function createTask (fn) {
-  return new DSUtils.Promise(fn).then(result => {
+  return new Promise(fn).then(function (result) {
     taskInProcess = false
     queue.shift()
     setTimeout(dequeue, 0)
     return result
-  }, err => {
+  }, function (err) {
     taskInProcess = false
     queue.shift()
     setTimeout(dequeue, 0)
-    return DSUtils.Promise.reject(err)
+    return utils.reject(err)
   })
 }
 
-class DSLocalStorageAdapter {
-  constructor (options) {
-    options = options || {}
-    this.defaults = new Defaults()
-    this.storage = options.storage || localStorage
-    DSUtils.deepMixIn(this.defaults, options)
-  }
+/**
+ * {@link LocalStorageAdapter} class.
+ *
+ * @name module:js-data-localstorage.LocalStorageAdapter
+ * @see LocalStorageAdapter
+ */
 
-  getPath (resourceConfig, options) {
-    options = options || {}
-    return DSUtils.makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.name)
-  }
+/**
+ * {@link LocalStorageAdapter} class. ES2015 default import.
+ *
+ * @name module:js-data-localstorage.default
+ * @see LocalStorageAdapter
+ */
 
-  getIdPath (resourceConfig, options, id) {
-    options = options || {}
-    return DSUtils.makePath(options.basePath || this.defaults.basePath || resourceConfig.basePath, resourceConfig.endpoint, id)
-  }
+/**
+ * LocalStorageAdapter class.
+ *
+ * @example
+ * import {DataStore} from 'js-data'
+ * import {LocalStorageAdapter} from 'js-data-localstorage'
+ * const store = new DataStore()
+ * const adapter = new LocalStorageAdapter()
+ * store.registerAdapter('ls', adapter, { 'default': true })
+ *
+ * @class LocalStorageAdapter
+ * @alias LocalStorageAdapter
+ * @extends Adapter
+ * @param {Object} [opts] Configuration options.
+ * @param {string} [opts.basePath=''] See {@link LocalStorageAdapter#basePath}.
+ * @param {boolean} [opts.debug=false] See {@link Adapter#debug}.
+ * @param {boolean} [opts.raw=false] See {@link Adapter#raw}.
+ * @param {Object} [opts.storeage=localStorage] See {@link LocalStorageAdapter#storage}.
+ */
+export function LocalStorageAdapter (opts) {
+  const self = this
+  utils.classCallCheck(self, LocalStorageAdapter)
+  opts || (opts = {})
+  utils.fillIn(opts, DEFAULTS)
+  Adapter.call(self, opts)
+}
 
-  getIds (resourceConfig, options) {
-    let ids
-    const idsPath = this.getPath(resourceConfig, options)
-    const idsJson = this.storage.getItem(idsPath)
-    if (idsJson) {
-      ids = DSUtils.fromJson(idsJson)
-    } else {
-      ids = {}
-    }
-    return ids
+// Setup prototype inheritance from Adapter
+LocalStorageAdapter.prototype = Object.create(Adapter.prototype, {
+  constructor: {
+    value: LocalStorageAdapter,
+    enumerable: false,
+    writable: true,
+    configurable: true
   }
+})
 
-  saveKeys (ids, resourceConfig, options) {
-    const idsPath = this.getPath(resourceConfig, options)
-    if (!DSUtils.isEmpty(ids)) {
-      this.storage.setItem(idsPath, DSUtils.toJson(ids))
-    } else {
-      this.storage.removeItem(idsPath)
-    }
-  }
+Object.defineProperty(LocalStorageAdapter, '__super__', {
+  configurable: true,
+  value: Adapter
+})
 
-  ensureId (id, resourceConfig, options) {
-    const ids = this.getIds(resourceConfig, options)
-    if (DSUtils.isArray(id)) {
+/**
+ * Alternative to ES6 class syntax for extending `LocalStorageAdapter`.
+ *
+ * @example <caption>Using the ES2015 class syntax.</caption>
+ * class MyLocalStorageAdapter extends LocalStorageAdapter {...}
+ * const adapter = new MyLocalStorageAdapter()
+ *
+ * @example <caption>Using {@link LocalStorageAdapter.extend}.</caption>
+ * var instanceProps = {...}
+ * var classProps = {...}
+ *
+ * var MyLocalStorageAdapter = LocalStorageAdapter.extend(instanceProps, classProps)
+ * var adapter = new MyLocalStorageAdapter()
+ *
+ * @method LocalStorageAdapter.extend
+ * @static
+ * @param {Object} [instanceProps] Properties that will be added to the
+ * prototype of the subclass.
+ * @param {Object} [classProps] Properties that will be added as static
+ * properties to the subclass itself.
+ * @return {Constructor} Subclass of `LocalStorageAdapter`.
+ */
+LocalStorageAdapter.extend = utils.extend
+
+utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
+  /**
+   * Retrieve the number of records that match the selection query. Internal
+   * method used by Adapter#count.
+   *
+   * @method LocalStorageAdapter#_count
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {Object} query Selection query.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _count (mapper, query, opts) {
+    const self = this
+    return self._findAll(mapper, query, opts).then(function (result) {
+      result[0] = result[0].length
+      return result
+    })
+  },
+
+  _createHelper (mapper, props, opts) {
+    const self = this
+    const _props = {}
+    const relationFields = mapper.relationFields || []
+    utils.forOwn(props, function (value, key) {
+      if (relationFields.indexOf(key) === -1) {
+        _props[key] = value
+      }
+    })
+    const id = utils.get(_props, mapper.idAttribute) || guid()
+    utils.set(_props, mapper.idAttribute, id)
+    const key = self.getIdPath(mapper, opts, id)
+
+    // Create the record
+    // TODO: Create related records when the "with" option is provided
+    self.storage.setItem(key, utils.toJson(_props))
+    self.ensureId(id, mapper, opts)
+    return utils.fromJson(self.storage.getItem(key))
+  },
+
+  /**
+   * Create a new record. Internal method used by Adapter#create.
+   *
+   * @method LocalStorageAdapter#_create
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {Object} props The record to be created.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _create (mapper, props, opts) {
+    const self = this
+    return new Promise(function (resolve) {
+      return resolve([self._createHelper(mapper, props, opts), {}])
+    })
+  },
+
+  /**
+   * Create multiple records in a single batch. Internal method used by
+   * Adapter#createMany.
+   *
+   * @method LocalStorageAdapter#_createMany
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {Object} props The records to be created.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _createMany (mapper, props, opts) {
+    const self = this
+    return new Promise(function (resolve) {
+      props || (props = [])
+      return resolve([props.map(function (_props) {
+        return self._createHelper(mapper, _props, opts)
+      }), {}])
+    })
+  },
+
+  /**
+   * Destroy the record with the given primary key. Internal method used by
+   * Adapter#destroy.
+   *
+   * @method LocalStorageAdapter#_destroy
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {(string|number)} id Primary key of the record to destroy.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _destroy (mapper, id, opts) {
+    const self = this
+    return new Promise(function (resolve) {
+      self.storage.removeItem(self.getIdPath(mapper, opts, id))
+      self.removeId(id, mapper, opts)
+      return resolve([undefined, {}])
+    })
+  },
+
+  /**
+   * Destroy the records that match the selection query. Internal method used by
+   * Adapter#destroyAll.
+   *
+   * @method LocalStorageAdapter#_destroyAll
+   * @private
+   * @param {Object} mapper the mapper.
+   * @param {Object} [query] Selection query.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _destroyAll (mapper, query, opts) {
+    const self = this
+    return self._findAll(mapper, query).then(function (results) {
+      let [records] = results
+      const idAttribute = mapper.idAttribute
+      // Gather IDs of records to be destroyed
+      const ids = records.map(function (record) {
+        return utils.get(record, idAttribute)
+      })
+      // Destroy each record
+      ids.forEach(function (id) {
+        self.storage.removeItem(self.getIdPath(mapper, opts, id))
+      })
+      self.removeId(ids, mapper, opts)
+      return [undefined, {}]
+    })
+  },
+
+  /**
+   * Retrieve the record with the given primary key. Internal method used by
+   * Adapter#find.
+   *
+   * @method LocalStorageAdapter#_find
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {(string|number)} id Primary key of the record to retrieve.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _find (mapper, id, opts) {
+    const self = this
+    return new Promise(function (resolve) {
+      const key = self.getIdPath(mapper, opts, id)
+      const record = self.storage.getItem(key)
+      return resolve([record ? utils.fromJson(record) : undefined, {}])
+    })
+  },
+
+  /**
+   * Retrieve the records that match the selection query. Internal method used
+   * by Adapter#findAll.
+   *
+   * @method LocalStorageAdapter#_findAll
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {Object} query Selection query.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _findAll (mapper, query, opts) {
+    const self = this
+    query || (query = {})
+    return new Promise(function (resolve) {
+      // Load all records into memory...
+      let records = []
+      const ids = self.getIds(mapper, opts)
+      utils.forOwn(ids, function (value, id) {
+        const json = self.storage.getItem(self.getIdPath(mapper, opts, id))
+        if (json) {
+          records.push(utils.fromJson(json))
+        }
+      })
+      const _query = new Query({
+        index: {
+          getAll () {
+            return records
+          }
+        }
+      })
+      return resolve([_query.filter(query).run(), {}])
+    })
+  },
+
+  /**
+   * Retrieve the number of records that match the selection query. Internal
+   * method used by Adapter#sum.
+   *
+   * @method LocalStorageAdapter#_sum
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {string} field The field to sum.
+   * @param {Object} query Selection query.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _sum (mapper, field, query, opts) {
+    const self = this
+    return self._findAll(mapper, query, opts).then(function (result) {
+      let sum = 0
+      result[0].forEach(function (record) {
+        sum += utils.get(record, field) || 0
+      })
+      result[0] = sum
+      return result
+    })
+  },
+
+  /**
+   * Apply the given update to the record with the specified primary key.
+   * Internal method used by Adapter#update.
+   *
+   * @method LocalStorageAdapter#_update
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {(string|number)} id The primary key of the record to be updated.
+   * @param {Object} props The update to apply to the record.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _update (mapper, id, props, opts) {
+    const self = this
+    props || (props = {})
+    return new Promise(function (resolve, reject) {
+      const key = self.getIdPath(mapper, opts, id)
+      let record = self.storage.getItem(key)
+      if (!record) {
+        return reject(new Error('Not Found'))
+      }
+      record = utils.fromJson(record)
+      utils.deepMixIn(record, props)
+      self.storage.setItem(key, utils.toJson(record))
+      return resolve([record, {}])
+    })
+  },
+
+  /**
+   * Apply the given update to all records that match the selection query.
+   * Internal method used by Adapter#updateAll.
+   *
+   * @method LocalStorageAdapter#_updateAll
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {Object} props The update to apply to the selected records.
+   * @param {Object} [query] Selection query.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _updateAll (mapper, props, query, opts) {
+    const self = this
+    const idAttribute = mapper.idAttribute
+    return self._findAll(mapper, query, opts).then(function (results) {
+      let [records] = results
+      records.forEach(function (record) {
+        record || (record = {})
+        const id = utils.get(record, idAttribute)
+        const key = self.getIdPath(mapper, opts, id)
+        utils.deepMixIn(record, props)
+        self.storage.setItem(key, utils.toJson(record))
+      })
+      return [records, {}]
+    })
+  },
+
+  /**
+   * Update the given records in a single batch. Internal method used by
+   * Adapter#updateMany.
+   *
+   * @method LocalStorageAdapter#updateMany
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {Object[]} records The records to update.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _updateMany (mapper, records, opts) {
+    const self = this
+    records || (records = [])
+    return new Promise(function (resolve) {
+      const updatedRecords = []
+      const idAttribute = mapper.idAttribute
+      records.forEach(function (record) {
+        if (!record) {
+          return
+        }
+        const id = utils.get(record, idAttribute)
+        if (utils.isUndefined(id)) {
+          return
+        }
+        const key = self.getIdPath(mapper, opts, id)
+        let json = self.storage.getItem(key)
+        if (!json) {
+          return
+        }
+        const existingRecord = utils.fromJson(json)
+        utils.deepMixIn(existingRecord, record)
+        self.storage.setItem(key, utils.toJson(existingRecord))
+        updatedRecords.push(existingRecord)
+      })
+      return resolve([records, {}])
+    })
+  },
+
+  create (mapper, props, opts) {
+    const self = this
+    return createTask(function (success, failure) {
+      queueTask(function () {
+        __super__.create.call(self, mapper, props, opts).then(success, failure)
+      })
+    })
+  },
+
+  createMany (mapper, props, opts) {
+    const self = this
+    return createTask(function (success, failure) {
+      queueTask(function () {
+        __super__.createMany.call(self, mapper, props, opts).then(success, failure)
+      })
+    })
+  },
+
+  destroy (mapper, id, opts) {
+    const self = this
+    return createTask(function (success, failure) {
+      queueTask(function () {
+        __super__.destroy.call(self, mapper, id, opts).then(success, failure)
+      })
+    })
+  },
+
+  destroyAll (mapper, query, opts) {
+    const self = this
+    return createTask(function (success, failure) {
+      queueTask(function () {
+        __super__.destroyAll.call(self, mapper, query, opts).then(success, failure)
+      })
+    })
+  },
+
+  /**
+   * TODO
+   *
+   * @method LocalStorageAdapter#ensureId
+   */
+  ensureId (id, mapper, opts) {
+    const ids = this.getIds(mapper, opts)
+    if (utils.isArray(id)) {
       if (!id.length) {
         return
       }
-      DSUtils.forEach(id, function (_id) {
+      id.forEach(function (_id) {
         ids[_id] = 1
       })
     } else {
       ids[id] = 1
     }
-    this.saveKeys(ids, resourceConfig, options)
-  }
+    this.saveKeys(ids, mapper, opts)
+  },
 
-  removeId (id, resourceConfig, options) {
-    const ids = this.getIds(resourceConfig, options)
-    if (DSUtils.isArray(id)) {
+  /**
+   * TODO
+   *
+   * @method LocalStorageAdapter#getPath
+   */
+  getPath (mapper, opts) {
+    opts = opts || {}
+    return makePath(opts.basePath === undefined ? (mapper.basePath === undefined ? this.basePath : mapper.basePath) : opts.basePath, mapper.name)
+  },
+
+  /**
+   * TODO
+   *
+   * @method LocalStorageAdapter#getIdPath
+   */
+  getIdPath (mapper, opts, id) {
+    opts = opts || {}
+    return makePath(opts.basePath || this.basePath || mapper.basePath, mapper.endpoint, id)
+  },
+
+  /**
+   * TODO
+   *
+   * @method LocalStorageAdapter#getIds
+   */
+  getIds (mapper, opts) {
+    let ids
+    const idsPath = this.getPath(mapper, opts)
+    const idsJson = this.storage.getItem(idsPath)
+    if (idsJson) {
+      ids = utils.fromJson(idsJson)
+    } else {
+      ids = {}
+    }
+    return ids
+  },
+
+  /**
+   * TODO
+   *
+   * @method LocalStorageAdapter#removeId
+   */
+  removeId (id, mapper, opts) {
+    const ids = this.getIds(mapper, opts)
+    if (utils.isArray(id)) {
       if (!id.length) {
         return
       }
-      DSUtils.forEach(id, function (_id) {
+      id.forEach(function (_id) {
         delete ids[_id]
       })
     } else {
       delete ids[id]
     }
-    this.saveKeys(ids, resourceConfig, options)
-  }
+    this.saveKeys(ids, mapper, opts)
+  },
 
-  GET (key) {
-    return new DSUtils.Promise(resolve => {
-      let item = this.storage.getItem(key)
-      resolve(item ? DSUtils.fromJson(item) : undefined)
-    })
-  }
+  /**
+   * TODO
+   *
+   * @method LocalStorageAdapter#saveKeys
+   */
+  saveKeys (ids, mapper, opts) {
+    ids = ids || {}
+    const idsPath = this.getPath(mapper, opts)
+    if (Object.keys(ids).length) {
+      this.storage.setItem(idsPath, utils.toJson(ids))
+    } else {
+      this.storage.removeItem(idsPath)
+    }
+  },
 
-  PUT (key, value) {
-    let DSLocalStorageAdapter = this
-    return DSLocalStorageAdapter.GET(key).then(item => {
-      if (item) {
-        DSUtils.deepMixIn(item, DSUtils.removeCircular(value))
-      }
-      this.storage.setItem(key, DSUtils.toJson(item || value))
-      return DSLocalStorageAdapter.GET(key)
-    })
-  }
-
-  DEL (key) {
-    return new DSUtils.Promise(resolve => {
-      this.storage.removeItem(key)
-      resolve()
-    })
-  }
-
-  find (resourceConfig, id, options) {
-    let instance
-    options = options || {}
-    options.with = options.with || []
-    return new DSUtils.Promise((resolve, reject) => {
-      this.GET(this.getIdPath(resourceConfig, options || {}, id))
-        .then(item => !item ? reject(new Error('Not Found!')) : item)
-        .then(_instance => {
-          instance = _instance
-          let tasks = []
-
-          DSUtils.forEach(resourceConfig.relationList, def => {
-            let relationName = def.relation
-            let relationDef = resourceConfig.getResource(relationName)
-            let containedName = null
-            if (DSUtils.contains(options.with, relationName)) {
-              containedName = relationName
-            } else if (DSUtils.contains(options.with, def.localField)) {
-              containedName = def.localField
-            }
-            if (containedName) {
-              let __options = DSUtils.deepMixIn({}, options.orig ? options.orig() : options)
-              __options.with = options.with.slice()
-              __options = DSUtils._(relationDef, __options)
-              DSUtils.remove(__options.with, containedName)
-              DSUtils.forEach(__options.with, (relation, i) => {
-                if (relation && relation.indexOf(containedName) === 0 && relation.length >= containedName.length && relation[containedName.length] === '.') {
-                  __options.with[i] = relation.substr(containedName.length + 1)
-                } else {
-                  __options.with[i] = ''
-                }
-              })
-
-              let task
-
-              if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {
-                task = this.findAll(resourceConfig.getResource(relationName), {
-                  where: {
-                    [def.foreignKey]: {
-                      '==': instance[resourceConfig.idAttribute]
-                    }
-                  }
-                }, __options).then(relatedItems => {
-                  if (def.type === 'hasOne' && relatedItems.length) {
-                    DSUtils.set(instance, def.localField, relatedItems[0])
-                  } else {
-                    DSUtils.set(instance, def.localField, relatedItems)
-                  }
-                  return relatedItems
-                })
-              } else if (def.type === 'hasMany' && def.localKeys) {
-                let localKeys = []
-                let itemKeys = instance[def.localKeys] || []
-                itemKeys = Array.isArray(itemKeys) ? itemKeys : DSUtils.keys(itemKeys)
-                localKeys = localKeys.concat(itemKeys || [])
-                task = this.findAll(resourceConfig.getResource(relationName), {
-                  where: {
-                    [relationDef.idAttribute]: {
-                      'in': DSUtils.filter(unique(localKeys), x => x)
-                    }
-                  }
-                }, __options).then(relatedItems => {
-                  DSUtils.set(instance, def.localField, relatedItems)
-                  return relatedItems
-                })
-              } else if (def.type === 'belongsTo' || (def.type === 'hasOne' && def.localKey)) {
-                task = this.find(resourceConfig.getResource(relationName), DSUtils.get(instance, def.localKey), __options).then(relatedItem => {
-                  DSUtils.set(instance, def.localField, relatedItem)
-                  return relatedItem
-                })
-              }
-
-              if (task) {
-                tasks.push(task)
-              }
-            }
-          })
-
-          return DSUtils.Promise.all(tasks)
-        })
-        .then(() => resolve(instance))
-        .catch(reject)
-    })
-  }
-
-  findAll (resourceConfig, params, options) {
-    let items = null
-    options = options || {}
-    options.with = options.with || []
-    return new DSUtils.Promise((resolve, reject) => {
-      try {
-        options = options || {}
-        if (!('allowSimpleWhere' in options)) {
-          options.allowSimpleWhere = true
-        }
-        let items = []
-        let ids = DSUtils.keys(this.getIds(resourceConfig, options))
-        DSUtils.forEach(ids, id => {
-          let itemJson = this.storage.getItem(this.getIdPath(resourceConfig, options, id))
-          if (itemJson) {
-            items.push(DSUtils.fromJson(itemJson))
-          }
-        })
-        resolve(filter.call(emptyStore, items, resourceConfig.name, params, options))
-      } catch (err) {
-        reject(err)
-      }
-    }).then(_items => {
-      items = _items
-      let tasks = []
-      DSUtils.forEach(resourceConfig.relationList, def => {
-        let relationName = def.relation
-        let relationDef = resourceConfig.getResource(relationName)
-        let containedName = null
-        if (DSUtils.contains(options.with, relationName)) {
-          containedName = relationName
-        } else if (DSUtils.contains(options.with, def.localField)) {
-          containedName = def.localField
-        }
-        if (containedName) {
-          let __options = DSUtils.deepMixIn({}, options.orig ? options.orig() : options)
-          __options.with = options.with.slice()
-          __options = DSUtils._(relationDef, __options)
-          DSUtils.remove(__options.with, containedName)
-          DSUtils.forEach(__options.with, (relation, i) => {
-            if (relation && relation.indexOf(containedName) === 0 && relation.length >= containedName.length && relation[containedName.length] === '.') {
-              __options.with[i] = relation.substr(containedName.length + 1)
-            } else {
-              __options.with[i] = ''
-            }
-          })
-
-          let task
-
-          if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {
-            task = this.findAll(resourceConfig.getResource(relationName), {
-              where: {
-                [def.foreignKey]: {
-                  'in': DSUtils.filter(map(items, item => DSUtils.get(item, resourceConfig.idAttribute)), x => x)
-                }
-              }
-            }, __options).then(relatedItems => {
-              DSUtils.forEach(items, item => {
-                let attached = []
-                DSUtils.forEach(relatedItems, relatedItem => {
-                  if (DSUtils.get(relatedItem, def.foreignKey) === item[resourceConfig.idAttribute]) {
-                    attached.push(relatedItem)
-                  }
-                })
-                if (def.type === 'hasOne' && attached.length) {
-                  DSUtils.set(item, def.localField, attached[0])
-                } else {
-                  DSUtils.set(item, def.localField, attached)
-                }
-              })
-              return relatedItems
-            })
-          } else if (def.type === 'hasMany' && def.localKeys) {
-            let localKeys = []
-            DSUtils.forEach(items, item => {
-              let itemKeys = item[def.localKeys] || []
-              itemKeys = Array.isArray(itemKeys) ? itemKeys : DSUtils.keys(itemKeys)
-              localKeys = localKeys.concat(itemKeys || [])
-            })
-            task = this.findAll(resourceConfig.getResource(relationName), {
-              where: {
-                [relationDef.idAttribute]: {
-                  'in': DSUtils.filter(unique(localKeys), x => x)
-                }
-              }
-            }, __options).then(relatedItems => {
-              DSUtils.forEach(items, item => {
-                let attached = []
-                let itemKeys = item[def.localKeys] || []
-                itemKeys = Array.isArray(itemKeys) ? itemKeys : DSUtils.keys(itemKeys)
-                DSUtils.forEach(relatedItems, relatedItem => {
-                  if (itemKeys && DSUtils.contains(itemKeys, relatedItem[relationDef.idAttribute])) {
-                    attached.push(relatedItem)
-                  }
-                })
-                DSUtils.set(item, def.localField, attached)
-              })
-              return relatedItems
-            })
-          } else if (def.type === 'belongsTo' || (def.type === 'hasOne' && def.localKey)) {
-            task = this.findAll(resourceConfig.getResource(relationName), {
-              where: {
-                [relationDef.idAttribute]: {
-                  'in': DSUtils.filter(map(items, item => DSUtils.get(item, def.localKey)), x => x)
-                }
-              }
-            }, __options).then(relatedItems => {
-              DSUtils.forEach(items, item => {
-                DSUtils.forEach(relatedItems, relatedItem => {
-                  if (relatedItem[relationDef.idAttribute] === item[def.localKey]) {
-                    DSUtils.set(item, def.localField, relatedItem)
-                  }
-                })
-              })
-              return relatedItems
-            })
-          }
-
-          if (task) {
-            tasks.push(task)
-          }
-        }
+  update (mapper, id, props, opts) {
+    const self = this
+    return createTask(function (success, failure) {
+      queueTask(function () {
+        __super__.update.call(self, mapper, id, props, opts).then(success, failure)
       })
-      return DSUtils.Promise.all(tasks)
-    }).then(() => items)
-  }
+    })
+  },
 
-  create (resourceConfig, attrs, options) {
-    return createTask((resolve, reject) => {
-      queueTask(() => {
-        attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid()
-        options = options || {}
-        this.PUT(
-          DSUtils.makePath(this.getIdPath(resourceConfig, options, attrs[resourceConfig.idAttribute])),
-          DSUtils.omit(attrs, resourceConfig.relationFields || [])
-        ).then(item => {
-          this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options)
-          resolve(item)
-        }).catch(reject)
+  updateAll (mapper, props, query, opts) {
+    const self = this
+    return createTask(function (success, failure) {
+      queueTask(function () {
+        __super__.updateAll.call(self, mapper, props, query, opts).then(success, failure)
+      })
+    })
+  },
+
+  updateMany (mapper, records, opts) {
+    const self = this
+    return createTask(function (success, failure) {
+      queueTask(function () {
+        __super__.updateMany.call(self, mapper, records, opts).then(success, failure)
       })
     })
   }
+})
 
-  createMany (resourceConfig, items, options) {
-    return createTask((resolve, reject) => {
-      queueTask(() => {
-        const tasks = []
-        const ids = []
-        DSUtils.forEach(items, attrs => {
-          const id = attrs[resourceConfig.idAttribute] = attrs[resourceConfig.idAttribute] || guid()
-          ids.push(id)
-          options = options || {}
-          tasks.push(this.PUT(
-            DSUtils.makePath(this.getIdPath(resourceConfig, options, id)),
-            DSUtils.omit(attrs, resourceConfig.relationFields || [])
-          ))
-        })
-        this.ensureId(ids, resourceConfig, options)
-        return DSUtils.Promise.all(tasks).then(resolve).catch(reject)
-      })
-    })
-  }
+/**
+ * Details of the current version of the `js-data-localstorage` module.
+ *
+ * @name module:js-data-localstorage.version
+ * @type {Object}
+ * @property {string} version.full The full semver value.
+ * @property {number} version.major The major version number.
+ * @property {number} version.minor The minor version number.
+ * @property {number} version.patch The patch version number.
+ * @property {(string|boolean)} version.alpha The alpha version value,
+ * otherwise `false` if the current version is not alpha.
+ * @property {(string|boolean)} version.beta The beta version value,
+ * otherwise `false` if the current version is not beta.
+ */
+export const version = '<%= version %>'
 
-  update (resourceConfig, id, attrs, options) {
-    return createTask((resolve, reject) => {
-      queueTask(() => {
-        options = options || {}
-        this.PUT(this.getIdPath(resourceConfig, options, id), DSUtils.omit(attrs, resourceConfig.relationFields || [])).then(item => {
-          this.ensureId(item[resourceConfig.idAttribute], resourceConfig, options)
-          resolve(item)
-        }).catch(reject)
-      })
-    })
-  }
+/**
+ * Registered as `js-data-localstorage` in NPM and Bower.
+ *
+ * @example <caption>Script tag</caption>
+ * var LocalStorageAdapter = window.JSDataLocalStorage.LocalStorageAdapter
+ * var adapter = new LocalStorageAdapter()
+ *
+ * @example <caption>CommonJS</caption>
+ * var LocalStorageAdapter = require('js-data-localstorage').LocalStorageAdapter
+ * var adapter = new LocalStorageAdapter()
+ *
+ * @example <caption>ES2015 Modules</caption>
+ * import {LocalStorageAdapter} from 'js-data-localstorage'
+ * const adapter = new LocalStorageAdapter()
+ *
+ * @example <caption>AMD</caption>
+ * define('myApp', ['js-data-localstorage'], function (JSDataLocalStorage) {
+ *   var LocalStorageAdapter = JSDataLocalStorage.LocalStorageAdapter
+ *   var adapter = new LocalStorageAdapter()
+ *
+ *   // ...
+ * })
+ *
+ * @module js-data-localstorage
+ */
 
-  updateAll (resourceConfig, attrs, params, options) {
-    return this.findAll(resourceConfig, params, options).then(items => {
-      const tasks = []
-      DSUtils.forEach(items, item => tasks.push(this.update(resourceConfig, item[resourceConfig.idAttribute], DSUtils.omit(attrs, resourceConfig.relationFields || []), options)))
-      return DSUtils.Promise.all(tasks)
-    })
-  }
-
-  destroy (resourceConfig, id, options) {
-    return createTask((resolve, reject) => {
-      queueTask(() => {
-        options = options || {}
-        this.DEL(this.getIdPath(resourceConfig, options, id))
-          .then(() => this.removeId(id, resourceConfig, options))
-          .then(() => resolve(null), reject)
-      })
-    })
-  }
-
-  destroyAll (resourceConfig, params, options) {
-    return this.findAll(resourceConfig, params, options).then(items => {
-      const ids = []
-      DSUtils.forEach(items, item => {
-        const id = item[resourceConfig.idAttribute]
-        ids.push(id)
-        this.storage.removeItem(this.getIdPath(resourceConfig, options, id))
-      })
-      this.removeId(ids, resourceConfig, options)
-      return ids
-    })
-  }
-}
-
-DSLocalStorageAdapter.version = {
-  full: '<%= pkg.version %>',
-  major: parseInt('<%= major %>', 10),
-  minor: parseInt('<%= minor %>', 10),
-  patch: parseInt('<%= patch %>', 10),
-  alpha: '<%= alpha %>' !== 'false' ? '<%= alpha %>' : false,
-  beta: '<%= beta %>' !== 'false' ? '<%= beta %>' : false
-}
-
-module.exports = DSLocalStorageAdapter
+export default LocalStorageAdapter
