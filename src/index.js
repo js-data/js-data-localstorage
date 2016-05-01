@@ -1,12 +1,67 @@
 /* global: localStorage */
-const JSData = require('js-data')
-const Adapter = require('js-data-adapter')
-const guid = require('mout/random/guid')
 
-const {
-  Query,
-  utils
-} = JSData
+/**
+ * Registered as `js-data-localstorage` in NPM and Bower.
+ *
+ * @example <caption>Script tag</caption>
+ * var LocalStorageAdapter = window.JSDataLocalStorage.LocalStorageAdapter
+ * var adapter = new LocalStorageAdapter()
+ *
+ * @example <caption>CommonJS</caption>
+ * var LocalStorageAdapter = require('js-data-localstorage').LocalStorageAdapter
+ * var adapter = new LocalStorageAdapter()
+ *
+ * @example <caption>ES6 Modules</caption>
+ * import {LocalStorageAdapter} from 'js-data-localstorage'
+ * const adapter = new LocalStorageAdapter()
+ *
+ * @example <caption>AMD</caption>
+ * define('myApp', ['js-data-localstorage'], function (JSDataLocalStorage) {
+ *   var LocalStorageAdapter = JSDataLocalStorage.LocalStorageAdapter
+ *   var adapter = new LocalStorageAdapter()
+ *
+ *   // ...
+ * })
+ *
+ * @module js-data-localstorage
+ */
+
+import {Query, utils} from 'js-data'
+import {Adapter} from '../node_modules/js-data-adapter/src/index'
+
+// This is kinda weird, but it's so we can use Rollup.js
+import * as Guid from '../node_modules/mout/random/guid'
+const { default: guid } = Guid
+
+const __super__ = Adapter.prototype
+
+const DEFAULTS = {
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#basePath
+   * @type {string}
+   */
+  basePath: '',
+
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#debug
+   * @type {boolean}
+   * @default false
+   */
+  debug: false,
+
+  /**
+   * TODO
+   *
+   * @name LocalStorageAdapter#storage
+   * @type {Object}
+   * @default localStorage
+   */
+  storage: localStorage
+}
 
 function isValidString (value) {
   return (value != null && value !== '')
@@ -56,53 +111,32 @@ function createTask (fn) {
   })
 }
 
-const __super__ = Adapter.prototype
-
-const DEFAULTS = {
-  /**
-   * TODO
-   *
-   * @name LocalStorageAdapter#basePath
-   * @type {string}
-   */
-  basePath: '',
-
-  /**
-   * TODO
-   *
-   * @name LocalStorageAdapter#debug
-   * @type {boolean}
-   * @default false
-   */
-  debug: false,
-
-  /**
-   * TODO
-   *
-   * @name LocalStorageAdapter#storage
-   * @type {Object}
-   * @default localStorage
-   */
-  storage: localStorage
-}
+/**
+ * {@link LocalStorageAdapter} class.
+ *
+ * @name module:js-data-localstorage.LocalStorageAdapter
+ * @see LocalStorageAdapter
+ */
 
 /**
  * LocalStorageAdapter class.
  *
  * @example
  * import {DataStore} from 'js-data'
- * import LocalStorageAdapter from 'js-data-localstorage'
+ * import {LocalStorageAdapter} from 'js-data-localstorage'
  * const store = new DataStore()
  * const adapter = new LocalStorageAdapter()
  * store.registerAdapter('ls', adapter, { 'default': true })
  *
  * @class LocalStorageAdapter
- * @param {Object} [opts] Configuration opts.
- * @param {string} [opts.basePath=''] TODO
- * @param {boolean} [opts.debug=false] TODO
- * @param {Object} [opts.storeage=localStorage] TODO
+ * @extends Adapter
+ * @param {Object} [opts] Configuration options.
+ * @param {string} [opts.basePath=''] See {@link LocalStorageAdapter#basePath}.
+ * @param {boolean} [opts.debug=false] See {@link Adapter#debug}.
+ * @param {boolean} [opts.raw=false] See {@link Adapter#raw}.
+ * @param {Object} [opts.storeage=localStorage] See {@link LocalStorageAdapter#storage}.
  */
-function LocalStorageAdapter (opts) {
+export function LocalStorageAdapter (opts) {
   const self = this
   utils.classCallCheck(self, LocalStorageAdapter)
   opts || (opts = {})
@@ -128,13 +162,24 @@ Object.defineProperty(LocalStorageAdapter, '__super__', {
 /**
  * Alternative to ES6 class syntax for extending `LocalStorageAdapter`.
  *
- * @name LocalStorageAdapter.extend
- * @method
+ * @example <caption>Using the ES2015 class syntax.</caption>
+ * class MyLocalStorageAdapter extends LocalStorageAdapter {...}
+ * const adapter = new MyLocalStorageAdapter()
+ *
+ * @example <caption>Using {@link LocalStorageAdapter.extend}.</caption>
+ * var instanceProps = {...}
+ * var classProps = {...}
+ *
+ * var MyLocalStorageAdapter = LocalStorageAdapter.extend(instanceProps, classProps)
+ * var adapter = new MyLocalStorageAdapter()
+ *
+ * @method LocalStorageAdapter.extend
+ * @static
  * @param {Object} [instanceProps] Properties that will be added to the
  * prototype of the subclass.
  * @param {Object} [classProps] Properties that will be added as static
  * properties to the subclass itself.
- * @return {Object} Subclass of `LocalStorageAdapter`.
+ * @return {Constructor} Subclass of `LocalStorageAdapter`.
  */
 LocalStorageAdapter.extend = utils.extend
 
@@ -143,8 +188,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * Retrieve the number of records that match the selection query. Internal
    * method used by Adapter#count.
    *
-   * @name LocalStorageAdapter#_count
-   * @method
+   * @method LocalStorageAdapter#_count
    * @private
    * @param {Object} mapper The mapper.
    * @param {Object} query Selection query.
@@ -182,8 +226,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   /**
    * Create a new record. Internal method used by Adapter#create.
    *
-   * @name LocalStorageAdapter#_create
-   * @method
+   * @method LocalStorageAdapter#_create
    * @private
    * @param {Object} mapper The mapper.
    * @param {Object} props The record to be created.
@@ -201,8 +244,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * Create multiple records in a single batch. Internal method used by
    * Adapter#createMany.
    *
-   * @name LocalStorageAdapter#_createMany
-   * @method
+   * @method LocalStorageAdapter#_createMany
    * @private
    * @param {Object} mapper The mapper.
    * @param {Object} props The records to be created.
@@ -223,8 +265,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * Destroy the record with the given primary key. Internal method used by
    * Adapter#destroy.
    *
-   * @name LocalStorageAdapter#_destroy
-   * @method
+   * @method LocalStorageAdapter#_destroy
    * @private
    * @param {Object} mapper The mapper.
    * @param {(string|number)} id Primary key of the record to destroy.
@@ -244,8 +285,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * Destroy the records that match the selection query. Internal method used by
    * Adapter#destroyAll.
    *
-   * @name LocalStorageAdapter#_destroyAll
-   * @method
+   * @method LocalStorageAdapter#_destroyAll
    * @private
    * @param {Object} mapper the mapper.
    * @param {Object} [query] Selection query.
@@ -274,8 +314,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * Retrieve the record with the given primary key. Internal method used by
    * Adapter#find.
    *
-   * @name LocalStorageAdapter#_find
-   * @method
+   * @method LocalStorageAdapter#_find
    * @private
    * @param {Object} mapper The mapper.
    * @param {(string|number)} id Primary key of the record to retrieve.
@@ -295,8 +334,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * Retrieve the records that match the selection query. Internal method used
    * by Adapter#findAll.
    *
-   * @name LocalStorageAdapter#_findAll
-   * @method
+   * @method LocalStorageAdapter#_findAll
    * @private
    * @param {Object} mapper The mapper.
    * @param {Object} query Selection query.
@@ -331,8 +369,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * Retrieve the number of records that match the selection query. Internal
    * method used by Adapter#sum.
    *
-   * @name LocalStorageAdapter#_sum
-   * @method
+   * @method LocalStorageAdapter#_sum
    * @private
    * @param {Object} mapper The mapper.
    * @param {string} field The field to sum.
@@ -356,8 +393,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * Apply the given update to the record with the specified primary key.
    * Internal method used by Adapter#update.
    *
-   * @name LocalStorageAdapter#_update
-   * @method
+   * @method LocalStorageAdapter#_update
    * @private
    * @param {Object} mapper The mapper.
    * @param {(string|number)} id The primary key of the record to be updated.
@@ -385,8 +421,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * Apply the given update to all records that match the selection query.
    * Internal method used by Adapter#updateAll.
    *
-   * @name LocalStorageAdapter#_updateAll
-   * @method
+   * @method LocalStorageAdapter#_updateAll
    * @private
    * @param {Object} mapper The mapper.
    * @param {Object} props The update to apply to the selected records.
@@ -414,8 +449,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * Update the given records in a single batch. Internal method used by
    * Adapter#updateMany.
    *
-   * @name LocalStorageAdapter#updateMany
-   * @method
+   * @method LocalStorageAdapter#updateMany
    * @private
    * @param {Object} mapper The mapper.
    * @param {Object[]} records The records to update.
@@ -489,8 +523,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   /**
    * TODO
    *
-   * @name LocalStorageAdapter#ensureId
-   * @method
+   * @method LocalStorageAdapter#ensureId
    */
   ensureId (id, mapper, opts) {
     const ids = this.getIds(mapper, opts)
@@ -510,8 +543,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   /**
    * TODO
    *
-   * @name LocalStorageAdapter#getPath
-   * @method
+   * @method LocalStorageAdapter#getPath
    */
   getPath (mapper, opts) {
     opts = opts || {}
@@ -521,8 +553,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   /**
    * TODO
    *
-   * @name LocalStorageAdapter#getIdPath
-   * @method
+   * @method LocalStorageAdapter#getIdPath
    */
   getIdPath (mapper, opts, id) {
     opts = opts || {}
@@ -532,8 +563,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   /**
    * TODO
    *
-   * @name LocalStorageAdapter#getIds
-   * @method
+   * @method LocalStorageAdapter#getIds
    */
   getIds (mapper, opts) {
     let ids
@@ -550,8 +580,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   /**
    * TODO
    *
-   * @name LocalStorageAdapter#removeId
-   * @method
+   * @method LocalStorageAdapter#removeId
    */
   removeId (id, mapper, opts) {
     const ids = this.getIds(mapper, opts)
@@ -571,8 +600,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   /**
    * TODO
    *
-   * @name LocalStorageAdapter#saveKeys
-   * @method
+   * @method LocalStorageAdapter#saveKeys
    */
   saveKeys (ids, mapper, opts) {
     ids = ids || {}
@@ -615,7 +643,7 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
 /**
  * Details of the current version of the `js-data-localstorage` module.
  *
- * @name LocalStorageAdapter.version
+ * @name module:js-data-localstorage.version
  * @type {Object}
  * @property {string} version.full The full semver value.
  * @property {number} version.major The major version number.
@@ -626,36 +654,6 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
  * @property {(string|boolean)} version.beta The beta version value,
  * otherwise `false` if the current version is not beta.
  */
-LocalStorageAdapter.version = {
-  full: '<%= pkg.version %>',
-  major: parseInt('<%= major %>', 10),
-  minor: parseInt('<%= minor %>', 10),
-  patch: parseInt('<%= patch %>', 10),
-  alpha: '<%= alpha %>' !== 'false' ? '<%= alpha %>' : false,
-  beta: '<%= beta %>' !== 'false' ? '<%= beta %>' : false
-}
+export const version = '<%= version %>'
 
-/**
- * Registered as `js-data-localstorage` in NPM and Bower.
- *
- * __Script tag__:
- * ```javascript
- * window.LocalStorageAdapter
- * ```
- * __CommonJS__:
- * ```javascript
- * var LocalStorageAdapter = require('js-data-localstorage')
- * ```
- * __ES6 Modules__:
- * ```javascript
- * import LocalStorageAdapter from 'js-data-localstorage'
- * ```
- * __AMD__:
- * ```javascript
- * define('myApp', ['js-data-localstorage'], function (LocalStorageAdapter) { ... })
- * ```
- *
- * @module js-data-localstorage
- */
-
-module.exports = LocalStorageAdapter
+export default LocalStorageAdapter

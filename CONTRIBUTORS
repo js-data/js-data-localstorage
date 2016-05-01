@@ -1,7 +1,6 @@
-# People who have contributed to the js-data-localstorage project.
+# This is the official list of js-data-rethinkdb project contributors.
 #
-# This file is controlled by scripts/authors.js
+# Names are formatted as:
+#   Name <email address>
 #
-# Names should be added to this file as:
-#   [commit count] Name <email address>
-    63	Jason Dobry <jason.dobry@gmail.com>
+Jason Dobry <jason.dobry@gmail.com>

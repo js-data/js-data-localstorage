@@ -1,3 +1,36 @@
+##### 3.0.0-beta.1 - 30 April 2016
+
+Official v3 beta release
+
+###### Breaking changes
+- How you must now import in ES2015:
+
+    ```js
+    import LocalStorageAdapter from 'js-data-localstorage'
+    const adapter = new LocalStorageAdapter()
+    ```
+    or
+    ```js
+    import {LocalStorageAdapter, version} from 'js-data-localstorage'
+    console.log(version)
+    const adapter = new LocalStorageAdapter()
+    ```
+
+- How you must now import in ES5:
+
+    ```js
+    var JSDataLocalStorage = require('js-data-localstorage')
+    var LocalStorageAdapter = JSDataLocalStorage.LocalStorageAdapter
+    var adapter = new LocalStorageAdapter()
+    ```
+
+- Moved some `dist` files to `release` to reduce noise
+
+###### Other
+- Upgraded dependencies
+- Improved JSDoc comments
+- Now using js-data JSDoc template
+
 ##### 3.0.0-alpha.7 - 18 March 2016
 
 ###### Backwards compatible API changes
