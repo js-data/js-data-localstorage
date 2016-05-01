@@ -1,3 +1,7 @@
+machine:
+  node:
+    version: 5.0.0
+
 dependencies:
   pre:
     - npm i -g npm
