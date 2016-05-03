@@ -11,7 +11,7 @@ const __super__ = Adapter.prototype
 
 const DEFAULTS = {
   /**
-   * TODO
+   * Add a namespace to keys as they are stored.
    *
    * @name LocalStorageAdapter#basePath
    * @type {string}
@@ -19,13 +19,33 @@ const DEFAULTS = {
   basePath: '',
 
   /**
-   * TODO
+   * Storage provider for this adapter. The default implementation is simply
+   * `getItem`, `setItem`, and `removeItem`. Each method accepts the same
+   * arguments as `localStorage#getItem`, `localStorage#setItem`, and
+   * `localStorage#removeItem`, but instead of being synchronous, these methods
+   * are asynchronous and return promises. This means you can swap out
+   * `localStorage` for `localForage`.
+   *
+   * @example <caption>Use localForage instead of localStorage</caption>
+   * const adapter = new LocalStorageAdapter({
+   *   storage: localForage
+   * })
    *
    * @name LocalStorageAdapter#storage
    * @type {Object}
    * @default localStorage
    */
-  storage: localStorage
+  storage: {
+    getItem: function (key) {
+      return utils.resolve(localStorage.getItem(key))
+    },
+    setItem: function (key, value) {
+      return utils.resolve(localStorage.setItem(key, value))
+    },
+    removeItem: function (key) {
+      return utils.resolve(localStorage.removeItem(key))
+    }
+  }
 }
 
 function isValidString (value) {
@@ -110,11 +130,10 @@ function createTask (fn) {
  * @param {Object} [opts.storeage=localStorage] See {@link LocalStorageAdapter#storage}.
  */
 export function LocalStorageAdapter (opts) {
-  const self = this
-  utils.classCallCheck(self, LocalStorageAdapter)
+  utils.classCallCheck(this, LocalStorageAdapter)
   opts || (opts = {})
   utils.fillIn(opts, DEFAULTS)
-  Adapter.call(self, opts)
+  Adapter.call(this, opts)
 }
 
 // Setup prototype inheritance from Adapter
@@ -169,31 +188,29 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @return {Promise}
    */
   _count (mapper, query, opts) {
-    const self = this
-    return self._findAll(mapper, query, opts).then(function (result) {
+    return this._findAll(mapper, query, opts).then((result) => {
       result[0] = result[0].length
       return result
     })
   },
 
   _createHelper (mapper, props, opts) {
-    const self = this
-    const _props = {}
-    const relationFields = mapper.relationFields || []
-    utils.forOwn(props, function (value, key) {
-      if (relationFields.indexOf(key) === -1) {
-        _props[key] = value
+    props = utils.plainCopy(props)
+    const idAttribute = mapper.idAttribute
+    const ids = props.map((_props) => {
+      let id = utils.get(_props, idAttribute)
+      if (utils.isUndefined(id)) {
+        id = guid()
+        utils.set(_props, idAttribute, id)
       }
+      return id
     })
-    const id = utils.get(_props, mapper.idAttribute) || guid()
-    utils.set(_props, mapper.idAttribute, id)
-    const key = self.getIdPath(mapper, opts, id)
-
-    // Create the record
-    // TODO: Create related records when the "with" option is provided
-    self.storage.setItem(key, utils.toJson(_props))
-    self.ensureId(id, mapper, opts)
-    return utils.fromJson(self.storage.getItem(key))
+    const keys = ids.map((id) => this.getIdPath(mapper, opts, id))
+    const tasks = props.map((_props, i) => this.storage.setItem(keys[i], utils.toJson(_props)))
+    return utils.Promise.all(tasks)
+      .then(() => this.ensureId(ids, mapper, opts))
+      .then(() => utils.Promise.all(keys.map((key) => this.storage.getItem(key))))
+      .then((records) => records.map((record) => utils.fromJson(record)))
   },
 
   /**
@@ -207,10 +224,8 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @return {Promise}
    */
   _create (mapper, props, opts) {
-    const self = this
-    return new Promise(function (resolve) {
-      return resolve([self._createHelper(mapper, props, opts), {}])
-    })
+    return this._createHelper(mapper, [props], opts)
+      .then((records) => [records[0], {}])
   },
 
   /**
@@ -225,13 +240,8 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @return {Promise}
    */
   _createMany (mapper, props, opts) {
-    const self = this
-    return new Promise(function (resolve) {
-      props || (props = [])
-      return resolve([props.map(function (_props) {
-        return self._createHelper(mapper, _props, opts)
-      }), {}])
-    })
+    return this._createHelper(mapper, props, opts)
+      .then((records) => [records, {}])
   },
 
   /**
@@ -246,12 +256,11 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @return {Promise}
    */
   _destroy (mapper, id, opts) {
-    const self = this
-    return new Promise(function (resolve) {
-      self.storage.removeItem(self.getIdPath(mapper, opts, id))
-      self.removeId(id, mapper, opts)
-      return resolve([undefined, {}])
-    })
+    // Remove record from storage
+    return this.storage.removeItem(this.getIdPath(mapper, opts, id))
+      // Remove record's key from storage
+      .then(() => this.removeId(id, mapper, opts))
+      .then(() => [undefined, {}])
   },
 
   /**
@@ -266,21 +275,18 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @return {Promise}
    */
   _destroyAll (mapper, query, opts) {
-    const self = this
-    return self._findAll(mapper, query).then(function (results) {
-      let [records] = results
-      const idAttribute = mapper.idAttribute
-      // Gather IDs of records to be destroyed
-      const ids = records.map(function (record) {
-        return utils.get(record, idAttribute)
+    return this._findAll(mapper, query, opts)
+      .then((results) => {
+        const [records] = results
+        const idAttribute = mapper.idAttribute
+        // Gather IDs of records to be destroyed
+        const ids = records.map((record) => utils.get(record, idAttribute))
+        // Remove records from storage
+        const tasks = ids.map((id) => this.storage.removeItem(this.getIdPath(mapper, opts, id)))
+        // Remove records' keys from storage
+        return utils.Promise.all(tasks).then(() => this.removeId(ids, mapper, opts))
       })
-      // Destroy each record
-      ids.forEach(function (id) {
-        self.storage.removeItem(self.getIdPath(mapper, opts, id))
-      })
-      self.removeId(ids, mapper, opts)
-      return [undefined, {}]
-    })
+      .then(() => [undefined, {}])
   },
 
   /**
@@ -295,12 +301,8 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @return {Promise}
    */
   _find (mapper, id, opts) {
-    const self = this
-    return new Promise(function (resolve) {
-      const key = self.getIdPath(mapper, opts, id)
-      const record = self.storage.getItem(key)
-      return resolve([record ? utils.fromJson(record) : undefined, {}])
-    })
+    const key = this.getIdPath(mapper, opts, id)
+    return this.storage.getItem(key).then((record) => [record ? utils.fromJson(record) : undefined, {}])
   },
 
   /**
@@ -315,27 +317,24 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @return {Promise}
    */
   _findAll (mapper, query, opts) {
-    const self = this
     query || (query = {})
-    return new Promise(function (resolve) {
-      // Load all records into memory...
-      let records = []
-      const ids = self.getIds(mapper, opts)
-      utils.forOwn(ids, function (value, id) {
-        const json = self.storage.getItem(self.getIdPath(mapper, opts, id))
-        if (json) {
-          records.push(utils.fromJson(json))
-        }
+    // Load all records into memory...
+    return this.getIds(mapper, opts)
+      .then((ids) => {
+        const tasks = Object.keys(ids).map((id) => this.storage.getItem(this.getIdPath(mapper, opts, id)))
+        return utils.Promise.all(tasks)
       })
-      const _query = new Query({
-        index: {
-          getAll () {
-            return records
+      .then((records) => records.map((record) => record ? utils.fromJson(record) : undefined).filter((record) => record))
+      .then((records) => {
+        const _query = new Query({
+          index: {
+            getAll () {
+              return records
+            }
           }
-        }
+        })
+        return [_query.filter(query).run(), {}]
       })
-      return resolve([_query.filter(query).run(), {}])
-    })
   },
 
   /**
@@ -351,15 +350,11 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @return {Promise}
    */
   _sum (mapper, field, query, opts) {
-    const self = this
-    return self._findAll(mapper, query, opts).then(function (result) {
-      let sum = 0
-      result[0].forEach(function (record) {
-        sum += utils.get(record, field) || 0
+    return this._findAll(mapper, query, opts)
+      .then((result) => {
+        result[0] = result[0].reduce((sum, record) => sum + (utils.get(record, field) || 0), 0)
+        return result
       })
-      result[0] = sum
-      return result
-    })
   },
 
   /**
@@ -375,19 +370,18 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @return {Promise}
    */
   _update (mapper, id, props, opts) {
-    const self = this
     props || (props = {})
-    return new Promise(function (resolve, reject) {
-      const key = self.getIdPath(mapper, opts, id)
-      let record = self.storage.getItem(key)
-      if (!record) {
-        return reject(new Error('Not Found'))
-      }
-      record = utils.fromJson(record)
-      utils.deepMixIn(record, props)
-      self.storage.setItem(key, utils.toJson(record))
-      return resolve([record, {}])
-    })
+    return this._find(mapper, id, opts)
+      .then((result) => {
+        const [record] = result
+        if (!record) {
+          throw new Error('Not Found')
+        }
+        const key = this.getIdPath(mapper, opts, id)
+        utils.deepMixIn(record, props)
+        return this.storage.setItem(key, utils.toJson(record))
+      })
+      .then(() => this._find(mapper, id, opts))
   },
 
   /**
@@ -403,19 +397,22 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @return {Promise}
    */
   _updateAll (mapper, props, query, opts) {
-    const self = this
-    const idAttribute = mapper.idAttribute
-    return self._findAll(mapper, query, opts).then(function (results) {
-      let [records] = results
-      records.forEach(function (record) {
-        record || (record = {})
-        const id = utils.get(record, idAttribute)
-        const key = self.getIdPath(mapper, opts, id)
-        utils.deepMixIn(record, props)
-        self.storage.setItem(key, utils.toJson(record))
+    return this._findAll(mapper, query, opts)
+      .then((results) => {
+        let [records] = results
+        const idAttribute = mapper.idAttribute
+        const tasks = records.map((record) => {
+          record || (record = {})
+          const id = utils.get(record, idAttribute)
+          const key = this.getIdPath(mapper, opts, id)
+          utils.deepMixIn(record, props)
+          return this.storage.setItem(key, utils.toJson(record))
+            .then(() => this._find(mapper, id, opts))
+            .then((result) => result[0])
+        })
+        return utils.Promise.all(tasks)
       })
-      return [records, {}]
-    })
+      .then((records) => [records, {}])
   },
 
   /**
@@ -430,65 +427,57 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @return {Promise}
    */
   _updateMany (mapper, records, opts) {
-    const self = this
     records || (records = [])
-    return new Promise(function (resolve) {
-      const updatedRecords = []
-      const idAttribute = mapper.idAttribute
-      records.forEach(function (record) {
-        if (!record) {
-          return
-        }
-        const id = utils.get(record, idAttribute)
-        if (utils.isUndefined(id)) {
-          return
-        }
-        const key = self.getIdPath(mapper, opts, id)
-        let json = self.storage.getItem(key)
-        if (!json) {
-          return
-        }
-        const existingRecord = utils.fromJson(json)
-        utils.deepMixIn(existingRecord, record)
-        self.storage.setItem(key, utils.toJson(existingRecord))
-        updatedRecords.push(existingRecord)
-      })
-      return resolve([records, {}])
-    })
+    const idAttribute = mapper.idAttribute
+    const tasks = records.filter((record) => record).map((record) => {
+      const id = utils.get(record, idAttribute)
+      if (utils.isUndefined(id)) {
+        return
+      }
+      const key = this.getIdPath(mapper, opts, id)
+      return this.storage.getItem(key)
+        .then((json) => {
+          if (!json) {
+            return
+          }
+          const existingRecord = utils.fromJson(json)
+          utils.deepMixIn(existingRecord, record)
+          return this.storage.setItem(key, utils.toJson(existingRecord))
+        })
+        .then(() => this._find(mapper, id, opts))
+        .then((result) => result[0])
+    }).filter((promise) => promise)
+    return utils.Promise.all(tasks).then((records) => [records, {}])
   },
 
   create (mapper, props, opts) {
-    const self = this
-    return createTask(function (success, failure) {
-      queueTask(function () {
-        __super__.create.call(self, mapper, props, opts).then(success, failure)
+    return createTask((success, failure) => {
+      queueTask(() => {
+        __super__.create.call(this, mapper, props, opts).then(success, failure)
       })
     })
   },
 
   createMany (mapper, props, opts) {
-    const self = this
-    return createTask(function (success, failure) {
-      queueTask(function () {
-        __super__.createMany.call(self, mapper, props, opts).then(success, failure)
+    return createTask((success, failure) => {
+      queueTask(() => {
+        __super__.createMany.call(this, mapper, props, opts).then(success, failure)
       })
     })
   },
 
   destroy (mapper, id, opts) {
-    const self = this
-    return createTask(function (success, failure) {
-      queueTask(function () {
-        __super__.destroy.call(self, mapper, id, opts).then(success, failure)
+    return createTask((success, failure) => {
+      queueTask(() => {
+        __super__.destroy.call(this, mapper, id, opts).then(success, failure)
       })
     })
   },
 
   destroyAll (mapper, query, opts) {
-    const self = this
-    return createTask(function (success, failure) {
-      queueTask(function () {
-        __super__.destroyAll.call(self, mapper, query, opts).then(success, failure)
+    return createTask((success, failure) => {
+      queueTask(() => {
+        __super__.destroyAll.call(this, mapper, query, opts).then(success, failure)
       })
     })
   },
@@ -499,18 +488,19 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @method LocalStorageAdapter#ensureId
    */
   ensureId (id, mapper, opts) {
-    const ids = this.getIds(mapper, opts)
-    if (utils.isArray(id)) {
-      if (!id.length) {
-        return
+    return this.getIds(mapper, opts).then((ids) => {
+      if (utils.isArray(id)) {
+        if (!id.length) {
+          return
+        }
+        id.forEach((_id) => {
+          ids[_id] = 1
+        })
+      } else {
+        ids[id] = 1
       }
-      id.forEach(function (_id) {
-        ids[_id] = 1
-      })
-    } else {
-      ids[id] = 1
-    }
-    this.saveKeys(ids, mapper, opts)
+      return this.saveKeys(ids, mapper, opts)
+    })
   },
 
   /**
@@ -541,13 +531,14 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   getIds (mapper, opts) {
     let ids
     const idsPath = this.getPath(mapper, opts)
-    const idsJson = this.storage.getItem(idsPath)
-    if (idsJson) {
-      ids = utils.fromJson(idsJson)
-    } else {
-      ids = {}
-    }
-    return ids
+    return this.storage.getItem(idsPath).then((idsJson) => {
+      if (idsJson) {
+        ids = utils.fromJson(idsJson)
+      } else {
+        ids = {}
+      }
+      return ids
+    })
   },
 
   /**
@@ -556,18 +547,19 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @method LocalStorageAdapter#removeId
    */
   removeId (id, mapper, opts) {
-    const ids = this.getIds(mapper, opts)
-    if (utils.isArray(id)) {
-      if (!id.length) {
-        return
+    return this.getIds(mapper, opts).then((ids) => {
+      if (utils.isArray(id)) {
+        if (!id.length) {
+          return
+        }
+        id.forEach(function (_id) {
+          delete ids[_id]
+        })
+      } else {
+        delete ids[id]
       }
-      id.forEach(function (_id) {
-        delete ids[_id]
-      })
-    } else {
-      delete ids[id]
-    }
-    this.saveKeys(ids, mapper, opts)
+      return this.saveKeys(ids, mapper, opts)
+    })
   },
 
   /**
@@ -576,38 +568,35 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
    * @method LocalStorageAdapter#saveKeys
    */
   saveKeys (ids, mapper, opts) {
-    ids = ids || {}
+    ids || (ids = {})
     const idsPath = this.getPath(mapper, opts)
     if (Object.keys(ids).length) {
-      this.storage.setItem(idsPath, utils.toJson(ids))
+      return this.storage.setItem(idsPath, utils.toJson(ids))
     } else {
-      this.storage.removeItem(idsPath)
+      return this.storage.removeItem(idsPath)
     }
   },
 
   update (mapper, id, props, opts) {
-    const self = this
-    return createTask(function (success, failure) {
-      queueTask(function () {
-        __super__.update.call(self, mapper, id, props, opts).then(success, failure)
+    return createTask((success, failure) => {
+      queueTask(() => {
+        __super__.update.call(this, mapper, id, props, opts).then(success, failure)
       })
     })
   },
 
   updateAll (mapper, props, query, opts) {
-    const self = this
-    return createTask(function (success, failure) {
-      queueTask(function () {
-        __super__.updateAll.call(self, mapper, props, query, opts).then(success, failure)
+    return createTask((success, failure) => {
+      queueTask(() => {
+        __super__.updateAll.call(this, mapper, props, query, opts).then(success, failure)
       })
     })
   },
 
   updateMany (mapper, records, opts) {
-    const self = this
-    return createTask(function (success, failure) {
-      queueTask(function () {
-        __super__.updateMany.call(self, mapper, records, opts).then(success, failure)
+    return createTask((success, failure) => {
+      queueTask(() => {
+        __super__.updateMany.call(this, mapper, records, opts).then(success, failure)
       })
     })
   }
