@@ -1,6 +1,6 @@
 /*!
 * js-data-localstorage
-* @version 3.0.0-beta.1 - Homepage <https://github.com/js-data/js-data-localstorage>
+* @version 3.0.0-beta.2 - Homepage <https://github.com/js-data/js-data-localstorage>
 * @author Jason Dobry <jason.dobry@gmail.com>
 * @copyright (c) 2014-2016 Jason Dobry
 * @license MIT <https://github.com/js-data/js-data-localstorage/blob/master/LICENSE>
@@ -1848,7 +1848,7 @@
 
   var DEFAULTS = {
     /**
-     * TODO
+     * Add a namespace to keys as they are stored.
      *
      * @name LocalStorageAdapter#basePath
      * @type {string}
@@ -1856,13 +1856,33 @@
     basePath: '',
 
     /**
-     * TODO
+     * Storage provider for this adapter. The default implementation is simply
+     * `getItem`, `setItem`, and `removeItem`. Each method accepts the same
+     * arguments as `localStorage#getItem`, `localStorage#setItem`, and
+     * `localStorage#removeItem`, but instead of being synchronous, these methods
+     * are asynchronous and return promises. This means you can swap out
+     * `localStorage` for `localForage`.
+     *
+     * @example <caption>Use localForage instead of localStorage</caption>
+     * const adapter = new LocalStorageAdapter({
+     *   storage: localForage
+     * })
      *
      * @name LocalStorageAdapter#storage
      * @type {Object}
      * @default localStorage
      */
-    storage: localStorage
+    storage: {
+      getItem: function getItem(key) {
+        return jsData.utils.resolve(localStorage.getItem(key));
+      },
+      setItem: function setItem(key, value) {
+        return jsData.utils.resolve(localStorage.setItem(key, value));
+      },
+      removeItem: function removeItem(key) {
+        return jsData.utils.resolve(localStorage.removeItem(key));
+      }
+    }
   };
 
   function isValidString(value) {
@@ -1951,11 +1971,10 @@
    * @param {Object} [opts.storeage=localStorage] See {@link LocalStorageAdapter#storage}.
    */
   function LocalStorageAdapter(opts) {
-    var self = this;
-    jsData.utils.classCallCheck(self, LocalStorageAdapter);
+    jsData.utils.classCallCheck(this, LocalStorageAdapter);
     opts || (opts = {});
     jsData.utils.fillIn(opts, DEFAULTS);
-    Adapter.call(self, opts);
+    Adapter.call(this, opts);
   }
 
   // Setup prototype inheritance from Adapter
@@ -2011,30 +2030,41 @@
      */
 
     _count: function _count(mapper, query, opts) {
-      var self = this;
-      return self._findAll(mapper, query, opts).then(function (result) {
+      return this._findAll(mapper, query, opts).then(function (result) {
         result[0] = result[0].length;
         return result;
       });
     },
     _createHelper: function _createHelper(mapper, props, opts) {
-      var self = this;
-      var _props = {};
-      var relationFields = mapper.relationFields || [];
-      jsData.utils.forOwn(props, function (value, key) {
-        if (relationFields.indexOf(key) === -1) {
-          _props[key] = value;
-        }
-      });
-      var id = jsData.utils.get(_props, mapper.idAttribute) || guid();
-      jsData.utils.set(_props, mapper.idAttribute, id);
-      var key = self.getIdPath(mapper, opts, id);
+      var _this = this;
 
-      // Create the record
-      // TODO: Create related records when the "with" option is provided
-      self.storage.setItem(key, jsData.utils.toJson(_props));
-      self.ensureId(id, mapper, opts);
-      return jsData.utils.fromJson(self.storage.getItem(key));
+      props = jsData.utils.plainCopy(props);
+      var idAttribute = mapper.idAttribute;
+      var ids = props.map(function (_props) {
+        var id = jsData.utils.get(_props, idAttribute);
+        if (jsData.utils.isUndefined(id)) {
+          id = guid();
+          jsData.utils.set(_props, idAttribute, id);
+        }
+        return id;
+      });
+      var keys = ids.map(function (id) {
+        return _this.getIdPath(mapper, opts, id);
+      });
+      var tasks = props.map(function (_props, i) {
+        return _this.storage.setItem(keys[i], jsData.utils.toJson(_props));
+      });
+      return jsData.utils.Promise.all(tasks).then(function () {
+        return _this.ensureId(ids, mapper, opts);
+      }).then(function () {
+        return jsData.utils.Promise.all(keys.map(function (key) {
+          return _this.storage.getItem(key);
+        }));
+      }).then(function (records) {
+        return records.map(function (record) {
+          return jsData.utils.fromJson(record);
+        });
+      });
     },
 
 
@@ -2049,9 +2079,8 @@
      * @return {Promise}
      */
     _create: function _create(mapper, props, opts) {
-      var self = this;
-      return new Promise(function (resolve) {
-        return resolve([self._createHelper(mapper, props, opts), {}]);
+      return this._createHelper(mapper, [props], opts).then(function (records) {
+        return [records[0], {}];
       });
     },
 
@@ -2068,12 +2097,8 @@
      * @return {Promise}
      */
     _createMany: function _createMany(mapper, props, opts) {
-      var self = this;
-      return new Promise(function (resolve) {
-        props || (props = []);
-        return resolve([props.map(function (_props) {
-          return self._createHelper(mapper, _props, opts);
-        }), {}]);
+      return this._createHelper(mapper, props, opts).then(function (records) {
+        return [records, {}];
       });
     },
 
@@ -2090,11 +2115,15 @@
      * @return {Promise}
      */
     _destroy: function _destroy(mapper, id, opts) {
-      var self = this;
-      return new Promise(function (resolve) {
-        self.storage.removeItem(self.getIdPath(mapper, opts, id));
-        self.removeId(id, mapper, opts);
-        return resolve([undefined, {}]);
+      var _this2 = this;
+
+      // Remove record from storage
+      return this.storage.removeItem(this.getIdPath(mapper, opts, id))
+      // Remove record's key from storage
+      .then(function () {
+        return _this2.removeId(id, mapper, opts);
+      }).then(function () {
+        return [undefined, {}];
       });
     },
 
@@ -2111,8 +2140,9 @@
      * @return {Promise}
      */
     _destroyAll: function _destroyAll(mapper, query, opts) {
-      var self = this;
-      return self._findAll(mapper, query).then(function (results) {
+      var _this3 = this;
+
+      return this._findAll(mapper, query, opts).then(function (results) {
         var _results = babelHelpers.slicedToArray(results, 1);
 
         var records = _results[0];
@@ -2122,11 +2152,15 @@
         var ids = records.map(function (record) {
           return jsData.utils.get(record, idAttribute);
         });
-        // Destroy each record
-        ids.forEach(function (id) {
-          self.storage.removeItem(self.getIdPath(mapper, opts, id));
+        // Remove records from storage
+        var tasks = ids.map(function (id) {
+          return _this3.storage.removeItem(_this3.getIdPath(mapper, opts, id));
         });
-        self.removeId(ids, mapper, opts);
+        // Remove records' keys from storage
+        return jsData.utils.Promise.all(tasks).then(function () {
+          return _this3.removeId(ids, mapper, opts);
+        });
+      }).then(function () {
         return [undefined, {}];
       });
     },
@@ -2144,11 +2178,9 @@
      * @return {Promise}
      */
     _find: function _find(mapper, id, opts) {
-      var self = this;
-      return new Promise(function (resolve) {
-        var key = self.getIdPath(mapper, opts, id);
-        var record = self.storage.getItem(key);
-        return resolve([record ? jsData.utils.fromJson(record) : undefined, {}]);
+      var key = this.getIdPath(mapper, opts, id);
+      return this.storage.getItem(key).then(function (record) {
+        return [record ? jsData.utils.fromJson(record) : undefined, {}];
       });
     },
 
@@ -2165,18 +2197,22 @@
      * @return {Promise}
      */
     _findAll: function _findAll(mapper, query, opts) {
-      var self = this;
+      var _this4 = this;
+
       query || (query = {});
-      return new Promise(function (resolve) {
-        // Load all records into memory...
-        var records = [];
-        var ids = self.getIds(mapper, opts);
-        jsData.utils.forOwn(ids, function (value, id) {
-          var json = self.storage.getItem(self.getIdPath(mapper, opts, id));
-          if (json) {
-            records.push(jsData.utils.fromJson(json));
-          }
+      // Load all records into memory...
+      return this.getIds(mapper, opts).then(function (ids) {
+        var tasks = Object.keys(ids).map(function (id) {
+          return _this4.storage.getItem(_this4.getIdPath(mapper, opts, id));
         });
+        return jsData.utils.Promise.all(tasks);
+      }).then(function (records) {
+        return records.map(function (record) {
+          return record ? jsData.utils.fromJson(record) : undefined;
+        }).filter(function (record) {
+          return record;
+        });
+      }).then(function (records) {
         var _query = new jsData.Query({
           index: {
             getAll: function getAll() {
@@ -2184,7 +2220,7 @@
             }
           }
         });
-        return resolve([_query.filter(query).run(), {}]);
+        return [_query.filter(query).run(), {}];
       });
     },
 
@@ -2202,13 +2238,10 @@
      * @return {Promise}
      */
     _sum: function _sum(mapper, field, query, opts) {
-      var self = this;
-      return self._findAll(mapper, query, opts).then(function (result) {
-        var sum = 0;
-        result[0].forEach(function (record) {
-          sum += jsData.utils.get(record, field) || 0;
-        });
-        result[0] = sum;
+      return this._findAll(mapper, query, opts).then(function (result) {
+        result[0] = result[0].reduce(function (sum, record) {
+          return sum + (jsData.utils.get(record, field) || 0);
+        }, 0);
         return result;
       });
     },
@@ -2227,18 +2260,22 @@
      * @return {Promise}
      */
     _update: function _update(mapper, id, props, opts) {
-      var self = this;
+      var _this5 = this;
+
       props || (props = {});
-      return new Promise(function (resolve, reject) {
-        var key = self.getIdPath(mapper, opts, id);
-        var record = self.storage.getItem(key);
+      return this._find(mapper, id, opts).then(function (result) {
+        var _result = babelHelpers.slicedToArray(result, 1);
+
+        var record = _result[0];
+
         if (!record) {
-          return reject(new Error('Not Found'));
+          throw new Error('Not Found');
         }
-        record = jsData.utils.fromJson(record);
+        var key = _this5.getIdPath(mapper, opts, id);
         jsData.utils.deepMixIn(record, props);
-        self.storage.setItem(key, jsData.utils.toJson(record));
-        return resolve([record, {}]);
+        return _this5.storage.setItem(key, jsData.utils.toJson(record));
+      }).then(function () {
+        return _this5._find(mapper, id, opts);
       });
     },
 
@@ -2256,20 +2293,27 @@
      * @return {Promise}
      */
     _updateAll: function _updateAll(mapper, props, query, opts) {
-      var self = this;
-      var idAttribute = mapper.idAttribute;
-      return self._findAll(mapper, query, opts).then(function (results) {
+      var _this6 = this;
+
+      return this._findAll(mapper, query, opts).then(function (results) {
         var _results2 = babelHelpers.slicedToArray(results, 1);
 
         var records = _results2[0];
 
-        records.forEach(function (record) {
+        var idAttribute = mapper.idAttribute;
+        var tasks = records.map(function (record) {
           record || (record = {});
           var id = jsData.utils.get(record, idAttribute);
-          var key = self.getIdPath(mapper, opts, id);
+          var key = _this6.getIdPath(mapper, opts, id);
           jsData.utils.deepMixIn(record, props);
-          self.storage.setItem(key, jsData.utils.toJson(record));
+          return _this6.storage.setItem(key, jsData.utils.toJson(record)).then(function () {
+            return _this6._find(mapper, id, opts);
+          }).then(function (result) {
+            return result[0];
+          });
         });
+        return jsData.utils.Promise.all(tasks);
+      }).then(function (records) {
         return [records, {}];
       });
     },
@@ -2287,61 +2331,70 @@
      * @return {Promise}
      */
     _updateMany: function _updateMany(mapper, records, opts) {
-      var self = this;
+      var _this7 = this;
+
       records || (records = []);
-      return new Promise(function (resolve) {
-        var updatedRecords = [];
-        var idAttribute = mapper.idAttribute;
-        records.forEach(function (record) {
-          if (!record) {
-            return;
-          }
-          var id = jsData.utils.get(record, idAttribute);
-          if (jsData.utils.isUndefined(id)) {
-            return;
-          }
-          var key = self.getIdPath(mapper, opts, id);
-          var json = self.storage.getItem(key);
+      var idAttribute = mapper.idAttribute;
+      var tasks = records.filter(function (record) {
+        return record;
+      }).map(function (record) {
+        var id = jsData.utils.get(record, idAttribute);
+        if (jsData.utils.isUndefined(id)) {
+          return;
+        }
+        var key = _this7.getIdPath(mapper, opts, id);
+        return _this7.storage.getItem(key).then(function (json) {
           if (!json) {
             return;
           }
           var existingRecord = jsData.utils.fromJson(json);
           jsData.utils.deepMixIn(existingRecord, record);
-          self.storage.setItem(key, jsData.utils.toJson(existingRecord));
-          updatedRecords.push(existingRecord);
+          return _this7.storage.setItem(key, jsData.utils.toJson(existingRecord));
+        }).then(function () {
+          return _this7._find(mapper, id, opts);
+        }).then(function (result) {
+          return result[0];
         });
-        return resolve([records, {}]);
+      }).filter(function (promise) {
+        return promise;
+      });
+      return jsData.utils.Promise.all(tasks).then(function (records) {
+        return [records, {}];
       });
     },
     create: function create(mapper, props, opts) {
-      var self = this;
+      var _this8 = this;
+
       return createTask(function (success, failure) {
         queueTask(function () {
-          __super__.create.call(self, mapper, props, opts).then(success, failure);
+          __super__.create.call(_this8, mapper, props, opts).then(success, failure);
         });
       });
     },
     createMany: function createMany(mapper, props, opts) {
-      var self = this;
+      var _this9 = this;
+
       return createTask(function (success, failure) {
         queueTask(function () {
-          __super__.createMany.call(self, mapper, props, opts).then(success, failure);
+          __super__.createMany.call(_this9, mapper, props, opts).then(success, failure);
         });
       });
     },
     destroy: function destroy(mapper, id, opts) {
-      var self = this;
+      var _this10 = this;
+
       return createTask(function (success, failure) {
         queueTask(function () {
-          __super__.destroy.call(self, mapper, id, opts).then(success, failure);
+          __super__.destroy.call(_this10, mapper, id, opts).then(success, failure);
         });
       });
     },
     destroyAll: function destroyAll(mapper, query, opts) {
-      var self = this;
+      var _this11 = this;
+
       return createTask(function (success, failure) {
         queueTask(function () {
-          __super__.destroyAll.call(self, mapper, query, opts).then(success, failure);
+          __super__.destroyAll.call(_this11, mapper, query, opts).then(success, failure);
         });
       });
     },
@@ -2353,18 +2406,21 @@
      * @method LocalStorageAdapter#ensureId
      */
     ensureId: function ensureId(id, mapper, opts) {
-      var ids = this.getIds(mapper, opts);
-      if (jsData.utils.isArray(id)) {
-        if (!id.length) {
-          return;
+      var _this12 = this;
+
+      return this.getIds(mapper, opts).then(function (ids) {
+        if (jsData.utils.isArray(id)) {
+          if (!id.length) {
+            return;
+          }
+          id.forEach(function (_id) {
+            ids[_id] = 1;
+          });
+        } else {
+          ids[id] = 1;
         }
-        id.forEach(function (_id) {
-          ids[_id] = 1;
-        });
-      } else {
-        ids[id] = 1;
-      }
-      this.saveKeys(ids, mapper, opts);
+        return _this12.saveKeys(ids, mapper, opts);
+      });
     },
 
 
@@ -2398,13 +2454,14 @@
     getIds: function getIds(mapper, opts) {
       var ids = void 0;
       var idsPath = this.getPath(mapper, opts);
-      var idsJson = this.storage.getItem(idsPath);
-      if (idsJson) {
-        ids = jsData.utils.fromJson(idsJson);
-      } else {
-        ids = {};
-      }
-      return ids;
+      return this.storage.getItem(idsPath).then(function (idsJson) {
+        if (idsJson) {
+          ids = jsData.utils.fromJson(idsJson);
+        } else {
+          ids = {};
+        }
+        return ids;
+      });
     },
 
 
@@ -2414,18 +2471,21 @@
      * @method LocalStorageAdapter#removeId
      */
     removeId: function removeId(id, mapper, opts) {
-      var ids = this.getIds(mapper, opts);
-      if (jsData.utils.isArray(id)) {
-        if (!id.length) {
-          return;
+      var _this13 = this;
+
+      return this.getIds(mapper, opts).then(function (ids) {
+        if (jsData.utils.isArray(id)) {
+          if (!id.length) {
+            return;
+          }
+          id.forEach(function (_id) {
+            delete ids[_id];
+          });
+        } else {
+          delete ids[id];
         }
-        id.forEach(function (_id) {
-          delete ids[_id];
-        });
-      } else {
-        delete ids[id];
-      }
-      this.saveKeys(ids, mapper, opts);
+        return _this13.saveKeys(ids, mapper, opts);
+      });
     },
 
 
@@ -2435,35 +2495,38 @@
      * @method LocalStorageAdapter#saveKeys
      */
     saveKeys: function saveKeys(ids, mapper, opts) {
-      ids = ids || {};
+      ids || (ids = {});
       var idsPath = this.getPath(mapper, opts);
       if (Object.keys(ids).length) {
-        this.storage.setItem(idsPath, jsData.utils.toJson(ids));
+        return this.storage.setItem(idsPath, jsData.utils.toJson(ids));
       } else {
-        this.storage.removeItem(idsPath);
+        return this.storage.removeItem(idsPath);
       }
     },
     update: function update(mapper, id, props, opts) {
-      var self = this;
+      var _this14 = this;
+
       return createTask(function (success, failure) {
         queueTask(function () {
-          __super__.update.call(self, mapper, id, props, opts).then(success, failure);
+          __super__.update.call(_this14, mapper, id, props, opts).then(success, failure);
         });
       });
     },
     updateAll: function updateAll(mapper, props, query, opts) {
-      var self = this;
+      var _this15 = this;
+
       return createTask(function (success, failure) {
         queueTask(function () {
-          __super__.updateAll.call(self, mapper, props, query, opts).then(success, failure);
+          __super__.updateAll.call(_this15, mapper, props, query, opts).then(success, failure);
         });
       });
     },
     updateMany: function updateMany(mapper, records, opts) {
-      var self = this;
+      var _this16 = this;
+
       return createTask(function (success, failure) {
         queueTask(function () {
-          __super__.updateMany.call(self, mapper, records, opts).then(success, failure);
+          __super__.updateMany.call(_this16, mapper, records, opts).then(success, failure);
         });
       });
     }
@@ -2484,8 +2547,8 @@
    * otherwise `false` if the current version is not beta.
    */
   var version = {
-  beta: 1,
-  full: '3.0.0-beta.1',
+  beta: 2,
+  full: '3.0.0-beta.2',
   major: 3,
   minor: 0,
   patch: 0
