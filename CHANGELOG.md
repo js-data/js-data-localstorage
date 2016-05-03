@@ -1,3 +1,19 @@
+##### 3.0.0-beta.2 - 02 May 2016
+
+###### Breaking changes
+
+- Changed required API for `LocalStorageAdapter#storage`
+
+    Previously, the API matched that of `localStorage`. Now, the API matches
+    that of `localForage`. js-data-localforage will be deprecated, you can now
+    use js-data-localstorage with localForage, for example:
+
+    ```js
+    var adapter = new LocalStorageAdapter({
+      storage: localForage
+    })
+    ```
+
 ##### 3.0.0-beta.1 - 30 April 2016
 
 Official v3 beta release
