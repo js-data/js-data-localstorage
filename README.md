@@ -29,7 +29,7 @@ Tested on IE9, Chrome 46, Firefox 41 & Safari 7.1 using
 
 The MIT License (MIT)
 
-Copyright (c) 2014-2016 js-data-http project authors
+Copyright (c) 2014-2016 js-data-localstorage project authors
 
 * [LICENSE](https://github.com/js-data/js-data-localstorage/blob/master/LICENSE)
 * [AUTHORS](https://github.com/js-data/js-data-localstorage/blob/master/AUTHORS)
