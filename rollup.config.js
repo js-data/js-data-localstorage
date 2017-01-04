@@ -13,6 +13,18 @@ module.exports = {
   },
   plugins: [
     babel({
+      babelrc: false,
+      plugins: [
+        'babel-plugin-external-helpers'
+      ],
+      presets: [
+        [
+          'es2015',
+          {
+            modules: false
+          }
+        ]
+      ],
       exclude: ['node_modules/mout/**/*']
     }),
     nodeResolve({

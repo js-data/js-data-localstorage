@@ -65,6 +65,7 @@
     "js-data": "^3.0.0-beta.3"
   },
   "devDependencies": {
+    "babel-plugin-external-helpers": "^6.18.0",
     "babel-polyfill": "6.8.0",
     "babel-preset-es2015-rollup": "1.1.1",
     "js-data-adapter": "~0.6.1",
