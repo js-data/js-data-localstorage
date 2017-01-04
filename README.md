@@ -19,7 +19,7 @@ Tested on IE9, Chrome 46, Firefox 41 & Safari 7.1 using
 
 * [Quick start](http://www.js-data.io/docs/home#quick-start) - Get started in 5 minutes
 * [Guides and Tutorials](http://www.js-data.io/docs/home) - Learn how to use JSData
-* [`LocalStorageAdapter` Guide](http://www.js-data.io/docs/js-data-localstorage) - Learn how to use `LocalStorageAdapter`
+* [`LocalStorageAdapter` Guide](http://www.js-data.io/docs/dslocalstorageadapter) - Learn how to use `LocalStorageAdapter`
 * [API Reference Docs](http://api.js-data.io) - Explore components, methods, options, etc.
 * [Community & Support](http://js-data.io/docs/community) - Find solutions and chat with the community
 * [General Contributing Guide](http://js-data.io/docs/contributing) - Give back and move the project forward
