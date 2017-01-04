@@ -13,6 +13,14 @@ module.exports = {
   },
   plugins: [
     babel({
+      babelrc: false,
+      presets: [
+        [
+          'es2015', {
+            'modules': false
+          }
+        ]
+      ],
       exclude: ['node_modules/mout/**/*']
     }),
     nodeResolve({
