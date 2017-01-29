@@ -483,9 +483,12 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   },
 
   /**
-   * TODO
+   * Store a given primary key
    *
    * @method LocalStorageAdapter#ensureId
+   * @param {(string|number)} id Primary key of the record.
+   * @param {Object} mapper The mapper.
+   * @param {Object} [opts] Configuration options.
    */
   ensureId (id, mapper, opts) {
     return this.getIds(mapper, opts).then((ids) => {
@@ -504,9 +507,12 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   },
 
   /**
-   * TODO
+   * Get a path name
    *
    * @method LocalStorageAdapter#getPath
+   * @param {Object} mapper The mapper.
+   * @param {Object} [opts] Configuration options.
+   * @return {string} The path name
    */
   getPath (mapper, opts) {
     opts = opts || {}
@@ -514,9 +520,13 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   },
 
   /**
-   * TODO
+   * Get a path for a given primary key
    *
    * @method LocalStorageAdapter#getIdPath
+   * @param {Object} mapper The mapper.
+   * @param {Object} [opts] Configuration options.
+   * @param {(string|number)} id Primary key of the record.
+   * @return {string} The path name
    */
   getIdPath (mapper, opts, id) {
     opts = opts || {}
@@ -524,9 +534,12 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   },
 
   /**
-   * TODO
+   * Retrieve all primary keys
    *
    * @method LocalStorageAdapter#getIds
+   * @param {Object} mapper The mapper.
+   * @param {Object} [opts] Configuration options.
+   * @return {Object} Stored ids
    */
   getIds (mapper, opts) {
     let ids
@@ -542,9 +555,12 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   },
 
   /**
-   * TODO
+   * Remove a given primary key
    *
    * @method LocalStorageAdapter#removeId
+   * @param {(string|number)} id Primary key of the record.
+   * @param {Object} mapper The mapper.
+   * @param {Object} [opts] Configuration options.
    */
   removeId (id, mapper, opts) {
     return this.getIds(mapper, opts).then((ids) => {
@@ -563,9 +579,12 @@ utils.addHiddenPropsToTarget(LocalStorageAdapter.prototype, {
   },
 
   /**
-   * TODO
+   * Store primary keys
    *
    * @method LocalStorageAdapter#saveKeys
+   * @param {(string|number)} id Primary key of the record.
+   * @param {Object} mapper The mapper.
+   * @param {Object} [opts] Configuration options.
    */
   saveKeys (ids, mapper, opts) {
     ids || (ids = {})
