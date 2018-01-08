@@ -1,6 +1,6 @@
 # Contributing to js-data-localstorage
 
-[Read the general Contributing Guide](http://js-data.io/docs/contributing).
+[Read the general Contributing Guide](http://www.js-data.io/docs/contributing).
 
 ## Project structure
 
@@ -33,4 +33,4 @@
   - set release body to changelog entry for the version
 1. `npm publish .`
 
-See also [Community & Support](http://js-data.io/docs/community).
+See also [Community & Support](http://www.js-data.io/docs/community).
