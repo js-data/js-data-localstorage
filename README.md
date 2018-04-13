@@ -10,7 +10,7 @@
 
 localStorage adapter for [js-data](http://www.js-data.io/).
 
-To get started, visit __[http://js-data.io](http://www.js-data.io/docs/js-data-localstorage)__.
+To get started, visit __[http://www.js-data.io](http://www.js-data.io/docs/js-data-localstorage)__.
 
 Tested on IE9, Chrome 46, Firefox 41 & Safari 7.1 using
 <img src="https://raw.githubusercontent.com/js-data/js-data-localstorage/master/bs.jpg" alt="bs logo" title="browserstack" width="150" height="35" style="vertical-align: middle" />
@@ -21,8 +21,8 @@ Tested on IE9, Chrome 46, Firefox 41 & Safari 7.1 using
 * [Guides and Tutorials](http://www.js-data.io/docs/home) - Learn how to use JSData
 * [`LocalStorageAdapter` Guide](http://www.js-data.io/docs/dslocalstorageadapter) - Learn how to use `LocalStorageAdapter`
 * [API Reference Docs](http://api.js-data.io) - Explore components, methods, options, etc.
-* [Community & Support](http://js-data.io/docs/community) - Find solutions and chat with the community
-* [General Contributing Guide](http://js-data.io/docs/contributing) - Give back and move the project forward
+* [Community & Support](http://www.js-data.io/docs/community) - Find solutions and chat with the community
+* [General Contributing Guide](http://www.js-data.io/docs/contributing) - Give back and move the project forward
   * [Contributing to js-data-localstorage](https://github.com/js-data/js-data-localstorage/blob/master/.github/CONTRIBUTING.md)
 
 ## License
